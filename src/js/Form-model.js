@@ -1142,6 +1142,10 @@ define( function( require, exports, module ) {
             success = this.validate( expr, xmlDataType );
             updated = this.getClosestRepeat();
             updated.nodes = [ $target.prop( 'nodeName' ) ];
+            updated.fullPath = this.model.getXPath( $target.get( 0 ), 'instance', true );
+            updated.value = newVal.toString();
+            updated.typeValid = success;
+            updated.file = ( xmlDataType === 'binary' );
 
             this.model.$.trigger( 'dataupdate', updated );
             //add type="file" attribute for file references
