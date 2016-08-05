@@ -1144,7 +1144,7 @@ define( function( require, exports, module ) {
             updated.nodes = [ $target.prop( 'nodeName' ) ];
             updated.fullPath = this.model.getXPath( $target.get( 0 ), 'instance', true );
             updated.value = newVal.toString();
-            updated.typeValid = success;
+            updated.valid = success;
             updated.file = ( xmlDataType === 'binary' );
 
             this.model.$.trigger( 'dataupdate', updated );
