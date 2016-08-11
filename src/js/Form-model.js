@@ -511,10 +511,10 @@ define( function( require, exports, module ) {
         firstRepeatInSeries = $insertAfterNode.siblings( name ).add( $insertAfterNode ).get( 0 );
 
         function incrementAndGetOrdinal() {
-            /*var lastUsedOrdinal = firstRepeatInSeries.getAttributeNS( that.ENKETO_XFORMS_NS, 'last-used-ordinal' ) || 0;
+            var lastUsedOrdinal = firstRepeatInSeries.getAttributeNS( that.ENKETO_XFORMS_NS, 'last-used-ordinal' ) || 0;
             var newOrdinal = Number( lastUsedOrdinal ) + 1;
-            firstRepeatInSeries.setAttributeNS( that.ENKETO_XFORMS_NS, that.getNamespacePrefix(that.ENKETO_XFORMS_NS)+':last-used-ordinal', newOrdinal );
-            return newOrdinal;*/
+            firstRepeatInSeries.setAttributeNS( that.ENKETO_XFORMS_NS, that.getNamespacePrefix( that.ENKETO_XFORMS_NS ) + ':last-used-ordinal', newOrdinal );
+            return newOrdinal;
         }
 
         function addOrdinalAttribute( el ) {
