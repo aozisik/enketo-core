@@ -46,8 +46,9 @@ define( function( require, exports, module ) {
 
         this.INSTANCE = /instance\([\'|\"]([^\/:\s]+)[\'|\"]\)/g;
         this.OPENROSA = /(decimal-date-time\(|pow\(|indexed-repeat\(|format-date\(|coalesce\(|join\(|max\(|min\(|random\(|substr\(|int\(|uuid\(|regex\(|now\(|today\(|date\(|if\(|boolean-from-string\(|checklist\(|selected\(|selected-at\(|round\(|area\(|position\([^\)])/;
-        this.OPENROSA_XFORM_NS = 'http://openrosa.org/xforms';
+        this.OPENROSA_XFORMS_NS = 'http://openrosa.org/xforms';
         this.JAVAROSA_XFORMS_NS = 'http://openrosa.org/javarosa';
+        this.ENKETO_XFORMS_NS = 'http://enketo.org/xforms';
 
         this.data = data;
         this.options = options;
@@ -494,15 +495,36 @@ define( function( require, exports, module ) {
      */
     FormModel.prototype.cloneRepeat = function( selector, index, merge ) {
         var $insertAfterNode;
+        var $nextSiblingsSameName;
         var name;
         var allClonedNodeNames;
         var $templateClone;
         var jrTemplate = !!this.templates[ selector ];
+        var firstRepeatInSeries;
         var $template = this.templates[ selector ] || this.node( selector, 0 ).get();
         var that = this;
 
         name = $template.prop( 'nodeName' );
         $insertAfterNode = this.node( selector, index ).get();
+        firstRepeatInSeries = $insertAfterNode.siblings( name ).add( $insertAfterNode ).get( 0 );
+
+        function incrementAndGetOrdinal() {
+            var lastUsedOrdinal = firstRepeatInSeries.getAttributeNS( that.ENKETO_XFORMS_NS, 'last-used-ordinal' ) || 0;
+            var newOrdinal = Number( lastUsedOrdinal ) + 1;
+            firstRepeatInSeries.setAttributeNS( that.ENKETO_XFORMS_NS, '__enk:last-used-ordinal', newOrdinal );
+            return newOrdinal;
+        }
+
+        function addOrdinalAttribute( el ) {
+            if ( !el.getAttributeNS( that.ENKETO_XFORMS_NS, 'ordinal' ) ) {
+                el.setAttributeNS( that.ENKETO_XFORMS_NS, '__enk:ordinal', incrementAndGetOrdinal() );
+            }
+        }
+
+        // if not exists
+        addOrdinalAttribute( $insertAfterNode[ 0 ] );
+
+        $nextSiblingsSameName = $insertAfterNode.nextAll( name ).each( addOrdinalAttribute );
 
         /**
          * If templatenodes and insertAfterNode(s) have been identified 
@@ -510,8 +532,10 @@ define( function( require, exports, module ) {
          * Strictly speaking using .next() is more efficient, but we use .nextAll() in case the document order has changed due to 
          * incorrect merging of an existing record.
          */
-        if ( $template[ 0 ] && $insertAfterNode.length === 1 && $insertAfterNode.nextAll( name ).length === 0 ) {
+        if ( $template[ 0 ] && $insertAfterNode.length === 1 && $nextSiblingsSameName.length === 0 ) {
             $templateClone = $template.clone().insertAfter( $insertAfterNode );
+
+            addOrdinalAttribute( $templateClone[ 0 ] );
 
 
             // If part of a merge operation (during form load) where the values will be populated from the record, defaults are not desired.
@@ -552,7 +576,8 @@ define( function( require, exports, module ) {
         var that = this;
         // in reverse document order to properly deal with nested repeat templates
         this.getTemplateNodes().reverse().forEach( function( templateEl ) {
-            that.templates[ that.getXPath( templateEl, 'instance' ) ] = $( templateEl ).removeAttr( 'template' ).removeAttr( 'jr:template' ).remove();
+            var xPath = that.getXPath( templateEl, 'instance' );
+            that.templates[ xPath ] = $( templateEl ).removeAttr( 'template' ).removeAttr( 'jr:template' ).remove();
         } );
     };
 
@@ -692,7 +717,7 @@ define( function( require, exports, module ) {
 
     FormModel.prototype.setNamespaces = function() {
         var namespaces = {
-            __orx: this.OPENROSA_XFORM_NS,
+            __orx: this.OPENROSA_XFORMS_NS,
             __jr: this.JAVAROSA_XFORMS_NS
         };
         /**
@@ -705,6 +730,8 @@ define( function( require, exports, module ) {
         var node = this.evaluate( '/model/instance[1]/*', 'node', null, null, true );
 
         if ( node && node.hasAttributes() ) {
+            // add the Enketo namespace, used for e.g. repeat ordinals
+            node.setAttribute( 'xmlns:__enk', this.ENKETO_XFORMS_NS );
             for ( var i = 0; i < node.attributes.length; i++ ) {
                 var attribute = node.attributes[ i ];
 
