@@ -1442,7 +1442,6 @@ define( function( require, exports, module ) {
                 var props;
                 var xmlType;
                 var $preload;
-                var namespaced = true;
                 var that = this;
 
                 //these initialize actual preload items
@@ -1467,24 +1466,17 @@ define( function( require, exports, module ) {
                     }
                 } );
                 // In addition the presence of certain meta data in the instance may automatically trigger a preload function
-                // even if the binding is not present. Note, that this actually does not deal with HTML elements at all.
-                meta = model.node( '/*/__orx:meta/__orx:*' );
-                if ( meta.get().length === 0 ) {
-                    namespaced = false;
-                    meta = model.node( '/*/meta/*' );
-                }
-
-                meta.get().each( function() {
+                model.getMetaNode( '*' ).get().each( function() {
                     var localName;
                     item = null;
                     xmlType = null;
                     param = null;
                     name = this.nodeName;
-                    dataNode = ( namespaced ) ? model.node( '/*/__orx:meta/' + name ) : model.node( '/*/meta/' + name );
+                    dataNode = model.getMetaNode( name );
                     curVal = dataNode.getVal()[ 0 ];
                     // First check if there isn't a binding with a preloader that already took care of this
                     if ( $form.find( '#or-preload-items input[name$="' + name + '"][data-preload]' ).length === 0 ) {
-                        localName = ( namespaced ) ? name.substring( name.indexOf( ':' ) + 1 ) : name;
+                        localName = name.indexOf( ':' ) ? name.substring( name.indexOf( ':' ) + 1 ) : name;
                         switch ( localName ) {
                             case 'instanceID':
                                 item = 'instance';

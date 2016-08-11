@@ -52,6 +52,7 @@ define( function( require, exports, module ) {
 
         this.data = data;
         this.options = options;
+        this.namespaces = {};
     };
 
     /**
@@ -476,7 +477,8 @@ define( function( require, exports, module ) {
     };
 
     FormModel.prototype.getMetaNode = function( localName ) {
-        var n = this.node( '/*/__orx:meta/__orx:' + localName, 0 );
+        var orPrefix = this.getNamespacePrefix( this.OPENROSA_XFORMS_NS );
+        var n = this.node( '/*/' + orPrefix + ':meta/' + orPrefix + ':' + localName, 0 );
 
         if ( n.get().length === 0 ) {
             n = this.node( '/*/meta/' + localName, 0 );
@@ -509,22 +511,24 @@ define( function( require, exports, module ) {
         firstRepeatInSeries = $insertAfterNode.siblings( name ).add( $insertAfterNode ).get( 0 );
 
         function incrementAndGetOrdinal() {
-            var lastUsedOrdinal = firstRepeatInSeries.getAttributeNS( that.ENKETO_XFORMS_NS, 'last-used-ordinal' ) || 0;
+            /*var lastUsedOrdinal = firstRepeatInSeries.getAttributeNS( that.ENKETO_XFORMS_NS, 'last-used-ordinal' ) || 0;
             var newOrdinal = Number( lastUsedOrdinal ) + 1;
-            firstRepeatInSeries.setAttributeNS( that.ENKETO_XFORMS_NS, '__enk:last-used-ordinal', newOrdinal );
-            return newOrdinal;
+            firstRepeatInSeries.setAttributeNS( that.ENKETO_XFORMS_NS, that.getNamespacePrefix(that.ENKETO_XFORMS_NS)+':last-used-ordinal', newOrdinal );
+            return newOrdinal;*/
         }
 
         function addOrdinalAttribute( el ) {
             if ( !el.getAttributeNS( that.ENKETO_XFORMS_NS, 'ordinal' ) ) {
-                el.setAttributeNS( that.ENKETO_XFORMS_NS, '__enk:ordinal', incrementAndGetOrdinal() );
+                el.setAttributeNS( that.ENKETO_XFORMS_NS, that.getNamespacePrefix( that.ENKETO_XFORMS_NS ) + ':ordinal', incrementAndGetOrdinal() );
             }
         }
 
         // if not exists
         addOrdinalAttribute( $insertAfterNode[ 0 ] );
 
-        $nextSiblingsSameName = $insertAfterNode.nextAll( name ).each( addOrdinalAttribute );
+        $nextSiblingsSameName = $insertAfterNode.nextAll( name ).each( function() {
+            addOrdinalAttribute( this );
+        } );
 
         /**
          * If templatenodes and insertAfterNode(s) have been identified 
@@ -582,8 +586,9 @@ define( function( require, exports, module ) {
     };
 
     FormModel.prototype.getTemplateNodes = function() {
+        var jrPrefix = this.getNamespacePrefix( this.JAVAROSA_XFORMS_NS );
         // for now we support both the official namespaced template and the hacked non-namespaced template attributes
-        return this.evaluate( '/model/instance[1]/*//*[@template] | /model/instance[1]/*//*[@__jr:template]', 'nodes', null, null, true );
+        return this.evaluate( '/model/instance[1]/*//*[@template] | /model/instance[1]/*//*[@' + jrPrefix + ':template]', 'nodes', null, null, true );
     };
 
     /**
@@ -613,15 +618,16 @@ define( function( require, exports, module ) {
      * See also: In JavaRosa, the documentation on the jr:template attribute.
      */
     FormModel.prototype.cloneAllTemplates = function() {
+        var jrPrefix = this.getNamespacePrefix( this.JAVAROSA_XFORMS_NS );
         var that = this;
 
         // for now we support both the official namespaced template and the hacked non-namespaced template attributes
-        this.evaluate( '/model/instance[1]/*//*[@template] | /model/instance[1]/*//*[@__jr:template]', 'nodes', null, null, true ).forEach( function( templateEl ) {
+        this.evaluate( '/model/instance[1]/*//*[@template] | /model/instance[1]/*//*[@' + jrPrefix + ':template]', 'nodes', null, null, true ).forEach( function( templateEl ) {
             var nodeName = templateEl.nodeName,
                 selector = that.getXPath( templateEl, 'instance' ),
-                ancestorTemplateNodes = that.evaluate( 'ancestor::' + nodeName + '[@template] | ancestor::' + nodeName + '[@__jr:template]', 'nodes', selector, 0, true );
+                ancestorTemplateNodes = that.evaluate( 'ancestor::' + nodeName + '[@template] | ancestor::' + nodeName + '[@' + jrPrefix + ':template]', 'nodes', selector, 0, true );
             if ( ancestorTemplateNodes.length === 0 && $( templateEl ).siblings( nodeName ).length === 0 ) {
-                $( templateEl ).clone().insertAfter( $( templateEl ) ).find( '*' ).addBack().removeAttr( 'template' ).removeAttr( 'jr:template' );
+                $( templateEl ).clone().insertAfter( $( templateEl ) ).find( '*' ).addBack().removeAttr( 'template' ).removeAttr( jrPrefix + ':template' );
             }
         } );
     };
@@ -716,10 +722,6 @@ define( function( require, exports, module ) {
     };
 
     FormModel.prototype.setNamespaces = function() {
-        var namespaces = {
-            __orx: this.OPENROSA_XFORMS_NS,
-            __jr: this.JAVAROSA_XFORMS_NS
-        };
         /**
          * Passing through all nodes would be very slow with an XForms model that contains lots of nodes such as large secondary instances. 
          * (The namespace XPath axis is not support in native browser XPath evaluators unfortunately).
@@ -728,20 +730,41 @@ define( function( require, exports, module ) {
          * We can always expand that later.
          */
         var node = this.evaluate( '/model/instance[1]/*', 'node', null, null, true );
+        var that = this;
+        var prefix;
 
         if ( node && node.hasAttributes() ) {
-            // add the Enketo namespace, used for e.g. repeat ordinals
-            node.setAttribute( 'xmlns:__enk', this.ENKETO_XFORMS_NS );
             for ( var i = 0; i < node.attributes.length; i++ ) {
                 var attribute = node.attributes[ i ];
 
                 if ( attribute.name.indexOf( 'xmlns:' ) === 0 ) {
-                    namespaces[ attribute.name.substring( 6 ) ] = attribute.value;
+                    this.namespaces[ attribute.name.substring( 6 ) ] = attribute.value;
                 }
             }
+            // add required namespaces if they are missing
+            [
+                [ 'orx', this.OPENROSA_XFORMS_NS ],
+                [ 'jr', this.JAVAROSA_XFORMS_NS ],
+                [ 'enk', this.ENKETO_XFORMS_NS ]
+            ].forEach( function( arr ) {
+                if ( !that.getNamespacePrefix( arr[ 1 ] ) ) {
+                    prefix = ( !that.namespaces[ arr[ 0 ] ] ) ? arr[ 0 ] : '__' + arr[ 0 ];
+                    node.setAttribute( 'xmlns:' + prefix, arr[ 1 ] );
+                    that.namespaces[ prefix ] = arr[ 1 ];
+                }
+            } );
         }
+    };
 
-        this.namespaces = namespaces;
+    FormModel.prototype.getNamespacePrefix = function( namespace ) {
+        var p;
+        for ( var prefix in this.namespaces ) {
+            if ( this.namespaces.hasOwnProperty( prefix ) && this.namespaces[ prefix ] === namespace ) {
+                p = prefix;
+                break;
+            }
+        }
+        return p;
     };
 
     FormModel.prototype.getNsResolver = function() {
