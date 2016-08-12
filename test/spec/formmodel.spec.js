@@ -1,4 +1,4 @@
-/* global describe, require, it */
+/* global describe, require, beforeAll, afterAll, it */
 var Model = require( '../../src/js/Form-model' );
 var mockForms1 = require( '../mock/forms' );
 
@@ -670,5 +670,62 @@ describe( 'Using XPath with default namespace', function() {
         } );
 
     } );
+
+} );
+
+describe( 'Ordinals in repeats', function() {
+    var config = require( 'text!enketo-config' );
+    var dflt = config[ 'repeat ordinals' ];
+    var wr = '<root xmlns:enk="http://enketo.org/xforms">{{c}}</root>';
+    var wrt = '<root xmlns:jr="http://openrosa.org/javarosa" xmlns:enk="http://enketo.org/xforms">{{c}}</root>';
+    var r = '<repeat><node/></repeat>';
+    var rt = '<repeat jr:template=""><node/></repeat>';
+    var start = '<model><instance><root>';
+    var startNs = '<model><instance><root xmlns:jr="http://openrosa.org/javarosa">';
+    var end = '</root></instance></model>';
+
+
+    beforeAll( function() {
+        config[ 'repeat ordinals' ] = true;
+    } );
+
+    afterAll( function() {
+        config[ 'repeat ordinals' ] = dflt;
+    } );
+
+    describe( 'that have no jr:template', function() {
+        var m1 = start + r + r + end;
+
+        it( 'initialize correctly with ordinals if more than one top-level repeat is included in model', function() {
+            var model = new Model( m1 );
+            model.init();
+            expect( model.getStr() ).toEqual( wr.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="2" enk:ordinal="1"><node/></repeat><repeat enk:ordinal="2"><node/></repeat>' ) );
+        } );
+
+        it( 'get added to newly cloned repeats', function() {
+            var model = new Model( m1 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 1 );
+            expect( model.getStr() ).toEqual( wr.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="3" enk:ordinal="1"><node/></repeat><repeat enk:ordinal="2"><node/></repeat>' +
+                '<repeat enk:ordinal="3"><node/></repeat>' ) );
+        } );
+
+    } );
+
+    describe( 'that have a jr:template', function() {
+        var m1 = startNs + rt + end;
+
+        it( 'get added to newly cloned repeats', function() {
+            var model = new Model( m1 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            expect( model.getStr() ).toEqual( wrt.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="2" enk:ordinal="1"><node/></repeat><repeat enk:ordinal="2"><node/></repeat>'
+            ) );
+        } );
+    } );
+
 
 } );

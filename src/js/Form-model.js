@@ -504,30 +504,38 @@ define( function( require, exports, module ) {
         var $templateClone;
         var jrTemplate = !!this.templates[ selector ];
         var firstRepeatInSeries;
+        var $repeatSeries;
         var $template = this.templates[ selector ] || this.node( selector, 0 ).get();
         var that = this;
+        var enkNs = this.getNamespacePrefix( that.ENKETO_XFORMS_NS );
 
         name = $template.prop( 'nodeName' );
         $insertAfterNode = this.node( selector, index ).get();
-        firstRepeatInSeries = $insertAfterNode.siblings( name ).add( $insertAfterNode ).get( 0 );
+        $repeatSeries = $insertAfterNode.siblings( name ).addBack();
+        firstRepeatInSeries = $repeatSeries.get( 0 );
+
+        /**
+         * It would seem more proper to use getAttributeNs and setAttributeNs. However, this results in duplicate
+         * namespace declarations on each repeat node when serializing the model.
+         */
 
         function incrementAndGetOrdinal() {
-            var lastUsedOrdinal = firstRepeatInSeries.getAttributeNS( that.ENKETO_XFORMS_NS, 'last-used-ordinal' ) || 0;
+            var lastUsedOrdinal = firstRepeatInSeries.getAttribute( enkNs + ':last-used-ordinal' ) || 0;
             var newOrdinal = Number( lastUsedOrdinal ) + 1;
-            firstRepeatInSeries.setAttributeNS( that.ENKETO_XFORMS_NS, that.getNamespacePrefix( that.ENKETO_XFORMS_NS ) + ':last-used-ordinal', newOrdinal );
+            firstRepeatInSeries.setAttribute( enkNs + ':last-used-ordinal', newOrdinal );
             return newOrdinal;
         }
 
         function addOrdinalAttribute( el ) {
-            if ( config[ 'repeat ordinals' ] === true && !el.getAttributeNS( that.ENKETO_XFORMS_NS, 'ordinal' ) ) {
-                el.setAttributeNS( that.ENKETO_XFORMS_NS, that.getNamespacePrefix( that.ENKETO_XFORMS_NS ) + ':ordinal', incrementAndGetOrdinal() );
+            if ( config[ 'repeat ordinals' ] === true && !el.getAttribute( enkNs + ':ordinal' ) ) {
+                el.setAttribute( enkNs + ':ordinal', incrementAndGetOrdinal() );
             }
         }
 
-        // if not exists
-        addOrdinalAttribute( $insertAfterNode[ 0 ] );
+        $nextSiblingsSameName = $insertAfterNode.nextAll( name );
 
-        $nextSiblingsSameName = $insertAfterNode.nextAll( name ).each( function() {
+        // if not exists
+        $repeatSeries.each( function() {
             addOrdinalAttribute( this );
         } );
 
@@ -538,10 +546,12 @@ define( function( require, exports, module ) {
          * incorrect merging of an existing record.
          */
         if ( $template[ 0 ] && $insertAfterNode.length === 1 && $nextSiblingsSameName.length === 0 ) {
-            $templateClone = $template.clone().insertAfter( $insertAfterNode );
+            $templateClone = $template.clone()
+                .removeAttr( enkNs + ':last-used-ordinal' )
+                .removeAttr( enkNs + ':ordinal' )
+                .insertAfter( $insertAfterNode );
 
             addOrdinalAttribute( $templateClone[ 0 ] );
-
 
             // If part of a merge operation (during form load) where the values will be populated from the record, defaults are not desired.
             // If no jrTemplate is present all values should be cleared as well.
@@ -731,7 +741,7 @@ define( function( require, exports, module ) {
          * We can always expand that later.
          */
         var start = this.hasInstance ? '/model/instance[1]' : '';
-        var node = this.evaluate( start + '/*', 'node', null, null, true ); // || this.evaluate( '/*', 'node', null, null, true );
+        var node = this.evaluate( start + '/*', 'node', null, null, true );
         var that = this;
         var prefix;
 
