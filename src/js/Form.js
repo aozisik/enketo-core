@@ -1472,7 +1472,7 @@ define( function( require, exports, module ) {
                     xmlType = null;
                     param = null;
                     name = this.nodeName;
-                    dataNode = model.getMetaNode( name );
+                    dataNode = model.node( model.getXPath( this, 'instance' ) );
                     curVal = dataNode.getVal()[ 0 ];
                     // First check if there isn't a binding with a preloader that already took care of this
                     if ( $form.find( '#or-preload-items input[name$="' + name + '"][data-preload]' ).length === 0 ) {

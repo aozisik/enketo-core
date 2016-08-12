@@ -10,6 +10,7 @@ define( function( require, exports, module ) {
     var $ = require( 'jquery' );
     var Promise = require( 'lie' );
     var FormLogicError = require( './Form-logic-error' );
+    var config = require( 'text!enketo-config' );
     require( './plugins' );
     require( './extend' );
 
@@ -478,10 +479,10 @@ define( function( require, exports, module ) {
 
     FormModel.prototype.getMetaNode = function( localName ) {
         var orPrefix = this.getNamespacePrefix( this.OPENROSA_XFORMS_NS );
-        var n = this.node( '/*/' + orPrefix + ':meta/' + orPrefix + ':' + localName, 0 );
+        var n = this.node( '/*/' + orPrefix + ':meta/' + orPrefix + ':' + localName );
 
         if ( n.get().length === 0 ) {
-            n = this.node( '/*/meta/' + localName, 0 );
+            n = this.node( '/*/meta/' + localName );
         }
 
         return n;
@@ -518,7 +519,7 @@ define( function( require, exports, module ) {
         }
 
         function addOrdinalAttribute( el ) {
-            if ( !el.getAttributeNS( that.ENKETO_XFORMS_NS, 'ordinal' ) ) {
+            if ( config[ 'repeat ordinals' ] === true && !el.getAttributeNS( that.ENKETO_XFORMS_NS, 'ordinal' ) ) {
                 el.setAttributeNS( that.ENKETO_XFORMS_NS, that.getNamespacePrefix( that.ENKETO_XFORMS_NS ) + ':ordinal', incrementAndGetOrdinal() );
             }
         }
@@ -729,7 +730,8 @@ define( function( require, exports, module ) {
          * For now it has therefore been restricted to only look at the top-level node in the primary instance.
          * We can always expand that later.
          */
-        var node = this.evaluate( '/model/instance[1]/*', 'node', null, null, true );
+        var start = this.hasInstance ? '/model/instance[1]' : '';
+        var node = this.evaluate( start + '/*', 'node', null, null, true ); // || this.evaluate( '/*', 'node', null, null, true );
         var that = this;
         var prefix;
 
@@ -743,16 +745,20 @@ define( function( require, exports, module ) {
                     }
                 }
             }
-            // add required namespaces if they are missing
+            // add required namespaces to resolver and document if they are missing
             [
-                [ 'orx', this.OPENROSA_XFORMS_NS ],
-                [ 'jr', this.JAVAROSA_XFORMS_NS ],
-                [ 'enk', this.ENKETO_XFORMS_NS ]
+                [ 'orx', this.OPENROSA_XFORMS_NS, false ],
+                [ 'jr', this.JAVAROSA_XFORMS_NS, false ],
+                [ 'enk', this.ENKETO_XFORMS_NS, config[ 'repeat ordinals' ] === true ]
             ].forEach( function( arr ) {
                 if ( !that.getNamespacePrefix( arr[ 1 ] ) ) {
                     prefix = ( !that.namespaces[ arr[ 0 ] ] ) ? arr[ 0 ] : '__' + arr[ 0 ];
-                    node.setAttribute( 'xmlns:' + prefix, arr[ 1 ] );
+                    // add to resolver
                     that.namespaces[ prefix ] = arr[ 1 ];
+                    // add to document
+                    if ( arr[ 2 ] ) {
+                        node.setAttribute( 'xmlns:' + prefix, arr[ 1 ] );
+                    }
                 }
             } );
         }
@@ -1497,7 +1503,6 @@ define( function( require, exports, module ) {
         },
         'geoshape': {
             validate: function( x ) {
-                console.debug( 'validating geoshape, this: ', this );
                 var geopoints = x.toString().split( ';' );
                 return geopoints.length >= 4 && ( geopoints[ 0 ] === geopoints[ geopoints.length - 1 ] ) && geopoints.every( function( geopoint ) {
                     return types.geopoint.validate( geopoint );

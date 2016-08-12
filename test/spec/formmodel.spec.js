@@ -439,7 +439,7 @@ describe( 'converting absolute paths', function() {
 
     ].forEach( function( test ) {
         it( 'converts correctly when the model and instance node are included in the model', function() {
-            var model = new Model( '<model><instance/></model>' );
+            var model = new Model( '<model><instance><root/></instance></model>' );
             var expected = test[ 1 ] || test[ 0 ];
             model.init();
             expect( model.shiftRoot( test[ 0 ] ) ).toEqual( expected );
@@ -457,7 +457,7 @@ describe( 'converting instance("id") to absolute paths', function() {
 
     ].forEach( function( test ) {
         it( 'happens correctly', function() {
-            var model = new Model( '<model><instance/><instance id="a"/></model>' );
+            var model = new Model( '<model><instance><root/></instance><instance id="a"/></model>' );
             var expected = test[ 1 ];
             model.init();
             expect( model.replaceInstanceFn( test[ 0 ] ) ).toEqual( expected );
@@ -475,7 +475,7 @@ describe( 'converting expressions with current() for context /data/node', functi
 
     ].forEach( function( test ) {
         it( 'happens correctly', function() {
-            var model = new Model( '<model><instance/></model>' );
+            var model = new Model( '<model><instance><root/></instance></model>' );
             var expected = test[ 1 ];
             model.init();
             expect( model.replaceCurrentFn( test[ 0 ], context ) ).toEqual( expected );
@@ -492,7 +492,7 @@ describe( 'converting indexed-repeat() ', function() {
         [ 'indexed-repeat(/p/t/r/ar/node, /p/t/r, 2, /p/t/r/ar, 3 )', '/p/t/r[position() = 2]/ar[position() = 3]/node' ]
     ].forEach( function( test ) {
         it( 'works, with a number as 3rd (5th, 7th) parameter', function() {
-            var model = new Model( '<model><instance/></model>' );
+            var model = new Model( '<model><instance><root/></instance></model>' );
             var expected = test[ 1 ];
             model.init();
             expect( model.replaceIndexedRepeatFn( test[ 0 ] ) ).toEqual( expected );
