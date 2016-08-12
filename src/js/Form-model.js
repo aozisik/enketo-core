@@ -733,12 +733,14 @@ define( function( require, exports, module ) {
         var that = this;
         var prefix;
 
-        if ( node && node.hasAttributes() ) {
-            for ( var i = 0; i < node.attributes.length; i++ ) {
-                var attribute = node.attributes[ i ];
+        if ( node ) {
+            if ( node.hasAttributes() ) {
+                for ( var i = 0; i < node.attributes.length; i++ ) {
+                    var attribute = node.attributes[ i ];
 
-                if ( attribute.name.indexOf( 'xmlns:' ) === 0 ) {
-                    this.namespaces[ attribute.name.substring( 6 ) ] = attribute.value;
+                    if ( attribute.name.indexOf( 'xmlns:' ) === 0 ) {
+                        this.namespaces[ attribute.name.substring( 6 ) ] = attribute.value;
+                    }
                 }
             }
             // add required namespaces if they are missing
