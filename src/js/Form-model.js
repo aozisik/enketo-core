@@ -532,6 +532,16 @@ define( function( require, exports, module ) {
             }
         }
 
+        function removeOrdinalAttributes( el ) {
+            // find all nested repeats first
+            var repeats = Array.prototype.slice.call( el.querySelectorAll( '[' + enkNs + '\\:ordinal]' ) );
+            repeats.push( el );
+            for ( var i = 0; i < repeats.length; i++ ) {
+                repeats[ i ].removeAttribute( enkNs + ':last-used-ordinal' );
+                repeats[ i ].removeAttribute( enkNs + ':ordinal' );
+            }
+        }
+
         $nextSiblingsSameName = $insertAfterNode.nextAll( name );
 
         // if not exists
@@ -547,10 +557,9 @@ define( function( require, exports, module ) {
          */
         if ( $template[ 0 ] && $insertAfterNode.length === 1 && $nextSiblingsSameName.length === 0 ) {
             $templateClone = $template.clone()
-                .removeAttr( enkNs + ':last-used-ordinal' )
-                .removeAttr( enkNs + ':ordinal' )
                 .insertAfter( $insertAfterNode );
 
+            removeOrdinalAttributes( $templateClone[ 0 ] );
             addOrdinalAttribute( $templateClone[ 0 ] );
 
             // If part of a merge operation (during form load) where the values will be populated from the record, defaults are not desired.

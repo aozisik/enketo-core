@@ -767,9 +767,8 @@ describe( 'Ordinals in repeats', function() {
             expect( model.getStr() ).toEqual( wr.replace( '{{c}}',
                 '<repeat enk:last-used-ordinal="3" enk:ordinal="1">' +
                 '<nr enk:last-used-ordinal="3" enk:ordinal="1"><node/></nr><nr enk:ordinal="3"><node/></nr>' +
-                '</repeat><repeat enk:ordinal="3"><nr><node /></nr></repeat>' ) );
+                '</repeat><repeat enk:ordinal="3"><nr><node/></nr></repeat>' ) );
         } );
-
 
     } );
 
@@ -821,6 +820,36 @@ describe( 'Ordinals in repeats', function() {
                 '<nr enk:last-used-ordinal="2" enk:ordinal="1"><node/></nr><nr enk:ordinal="2"><node/></nr>' +
                 '</repeat>' +
                 '<repeat enk:ordinal="2"><nr enk:last-used-ordinal="2" enk:ordinal="1"><node/></nr><nr enk:ordinal="2"><node/></nr></repeat>' ) );
+        } );
+
+        it( 'retains original ordinals when a repeat or NESTED repeat instance in between is removed', function() {
+            var model = new Model( m3 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat', 1 );
+            model.cloneRepeat( '/root/repeat/nr', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 1 );
+            model.node( '/root/repeat', 1 ).remove();
+            model.node( '/root/repeat/nr', 1 ).remove();
+            expect( model.getStr() ).toEqual( wrt.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="3" enk:ordinal="1">' +
+                '<nr enk:last-used-ordinal="3" enk:ordinal="1"><node/></nr><nr enk:ordinal="3"><node/></nr>' +
+                '</repeat><repeat enk:ordinal="3"><nr><node/></nr></repeat>' ) );
+        } );
+
+        it( 'continues ordinal numbering when the last repeat or NESTED repeat instance is removed and a new repeat is created', function() {
+            var model = new Model( m3 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 0 );
+            model.node( '/root/repeat', 1 ).remove();
+            model.node( '/root/repeat/nr', 1 ).remove();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 0 );
+            expect( model.getStr() ).toEqual( wrt.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="3" enk:ordinal="1">' +
+                '<nr enk:last-used-ordinal="3" enk:ordinal="1"><node/></nr><nr enk:ordinal="3"><node/></nr>' +
+                '</repeat><repeat enk:ordinal="3"><nr><node/></nr></repeat>' ) );
         } );
 
     } );
