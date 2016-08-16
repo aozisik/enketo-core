@@ -556,7 +556,9 @@ define( function( require, exports, module ) {
             // If part of a merge operation (during form load) where the values will be populated from the record, defaults are not desired.
             // If no jrTemplate is present all values should be cleared as well.
             if ( merge || !jrTemplate ) {
-                $templateClone.find( '*' ).text( '' );
+                $templateClone.find( '*' ).filter( function() {
+                    return $( this ).children().length === 0;
+                } ).text( '' );
             }
 
             // publish the changes
