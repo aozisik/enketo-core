@@ -284,7 +284,6 @@ describe( 'repeat functionality', function() {
         expect( $2ndLevelTargetRepeats.length ).toEqual( 3 );
     } );
 
-    //doesn't work in bloody Travis. STFU Travis!
     xit( 'doesn\'t duplicate date widgets in a cloned repeat', function() {
         form = loadForm( 'nested_repeats.xml' );
         form.init();
@@ -292,8 +291,38 @@ describe( 'repeat functionality', function() {
             $dates = formH.$.find( '[name="/nested_repeats/kids/kids_details/immunization_info/date"]' );
 
         expect( $dates.length ).toEqual( 5 );
+        // for some reason these widgets are not instantiated here
         expect( $dates.parent().find( '.widget.date' ).length ).toEqual( 5 );
     } );
+
+    describe( 'ordinals are set for default repeat instances in the default model upon initialization', function() {
+        var config = require( 'text!enketo-config' );
+        var dflt = config[ 'repeat ordinals' ];
+        beforeAll( function() {
+            config[ 'repeat ordinals' ] = true;
+        } );
+
+        afterAll( function() {
+            config[ 'repeat ordinals' ] = dflt;
+        } );
+        // this test is only interested in the model, but adding ordinals to default repeat instances is directed
+        // by Form.js
+        it( 'initialize correctly with ordinals if more than one top-level repeat is included in model', function() {
+            var f = loadForm( 'nested_repeats.xml' );
+            f.init();
+            var model = f.getModel();
+            expect( model.getStr().replace( />\s+</g, '><' ) ).toContain(
+                '<kids_details enk:last-used-ordinal="2" enk:ordinal="1"><kids_name>Tom</kids_name><kids_age>2</kids_age>' +
+                '<immunization_info enk:last-used-ordinal="2" enk:ordinal="1"><vaccine>Polio</vaccine><date/></immunization_info>' +
+                '<immunization_info enk:ordinal="2"><vaccine>Rickets</vaccine><date/></immunization_info></kids_details>' +
+                '<kids_details enk:ordinal="2"><kids_name>Dick</kids_name><kids_age>5</kids_age>' +
+                '<immunization_info enk:last-used-ordinal="3" enk:ordinal="1"><vaccine>Malaria</vaccine><date/></immunization_info>' +
+                '<immunization_info enk:ordinal="2"><vaccine>Flu</vaccine><date/></immunization_info>' +
+                '<immunization_info enk:ordinal="3"><vaccine>Polio</vaccine><date/></immunization_info>' +
+                '</kids_details>' );
+        } );
+    } );
+
 } );
 
 describe( 'calculations', function() {
@@ -547,7 +576,7 @@ describe( 'Itemset functionality', function() {
             $items2().filter( '[value="banana"], [value="cacao"]' ).prop( 'checked', true ).trigger( 'change' );
             expect( form.getModel().$.find( 'crop' ).text() ).toEqual( 'banana cacao' );
             // add a third non-existing item to model for itemset 2
-            form.getModel().$.find( 'crop' ).text( 'banana fake cacao' )
+            form.getModel().$.find( 'crop' ).text( 'banana fake cacao' );
             expect( form.getModel().$.find( 'crop' ).text() ).toEqual( 'banana fake cacao' );
             // select an additional item in itemset 1, to trigger update of itemset 2
             $items1().filter( '[value="maize"]' ).prop( 'checked', true ).trigger( 'change' );

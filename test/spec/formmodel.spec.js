@@ -694,17 +694,21 @@ describe( 'Ordinals in repeats', function() {
     } );
 
     describe( 'that have no jr:template', function() {
-        var m1 = start + r + r + end;
+        var m1 = start + r + end;
+        var m2 = start + r + r + end;
+        var m3 = start + '<repeat>' + r.replace( /repeat/g, 'nr' ) + '</repeat>' + end;
+        var m4 = start + '<repeat>' + r.replace( /repeat/g, 'nr' ) + r.replace( /repeat/g, 'nr' ) + '</repeat>' + end;
 
-        it( 'initialize correctly with ordinals if more than one top-level repeat is included in model', function() {
+        it( 'get added to newly cloned repeats', function() {
             var model = new Model( m1 );
             model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
             expect( model.getStr() ).toEqual( wr.replace( '{{c}}',
                 '<repeat enk:last-used-ordinal="2" enk:ordinal="1"><node/></repeat><repeat enk:ordinal="2"><node/></repeat>' ) );
         } );
 
-        it( 'get added to newly cloned repeats', function() {
-            var model = new Model( m1 );
+        it( 'get added to newly cloned repeats if multiple instances are present in default model', function() {
+            var model = new Model( m2 );
             model.init();
             model.cloneRepeat( '/root/repeat', 1 );
             expect( model.getStr() ).toEqual( wr.replace( '{{c}}',
@@ -712,10 +716,68 @@ describe( 'Ordinals in repeats', function() {
                 '<repeat enk:ordinal="3"><node/></repeat>' ) );
         } );
 
+        it( 'get added to newly cloned NESTED repeats', function() {
+            var model = new Model( m3 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 1 );
+            expect( model.getStr() ).toEqual( wr.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="2" enk:ordinal="1">' +
+                '<nr enk:last-used-ordinal="3" enk:ordinal="1"><node/></nr><nr enk:ordinal="2"><node/></nr><nr enk:ordinal="3"><node/></nr>' +
+                '</repeat><repeat enk:ordinal="2"><nr><node/></nr></repeat>' ) );
+        } );
+
+        it( 'get added to newly cloned NESTED repeats if multiple instances of the nested repeat are present in default model', function() {
+            var model = new Model( m4 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 1 );
+            model.cloneRepeat( '/root/repeat/nr', 3 );
+            expect( model.getStr() ).toEqual( wr.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="2" enk:ordinal="1">' +
+                '<nr enk:last-used-ordinal="3" enk:ordinal="1"><node/></nr><nr enk:ordinal="2"><node/></nr><nr enk:ordinal="3"><node/></nr>' +
+                '</repeat><repeat enk:ordinal="2"><nr enk:last-used-ordinal="2" enk:ordinal="1"><node/></nr><nr enk:ordinal="2"><node/></nr></repeat>' ) );
+        } );
+
+        it( 'retains original ordinals when a repeat or NESTED repeat instance in between is removed', function() {
+            var model = new Model( m3 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat', 1 );
+            model.cloneRepeat( '/root/repeat/nr', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 1 );
+            model.node( '/root/repeat', 1 ).remove();
+            model.node( '/root/repeat/nr', 1 ).remove();
+            expect( model.getStr() ).toEqual( wr.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="3" enk:ordinal="1">' +
+                '<nr enk:last-used-ordinal="3" enk:ordinal="1"><node/></nr><nr enk:ordinal="3"><node/></nr>' +
+                '</repeat><repeat enk:ordinal="3"><nr><node/></nr></repeat>' ) );
+        } );
+
+        it( 'continues ordinal numbering when the last repeat or NESTED repeat instance is removed and a new repeat is created', function() {
+            var model = new Model( m3 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 0 );
+            model.node( '/root/repeat', 1 ).remove();
+            model.node( '/root/repeat/nr', 1 ).remove();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 0 );
+            expect( model.getStr() ).toEqual( wr.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="3" enk:ordinal="1">' +
+                '<nr enk:last-used-ordinal="3" enk:ordinal="1"><node/></nr><nr enk:ordinal="3"><node/></nr>' +
+                '</repeat><repeat enk:ordinal="3"><nr><node /></nr></repeat>' ) );
+        } );
+
+
     } );
 
     describe( 'that have a jr:template', function() {
         var m1 = startNs + rt + end;
+        var m2 = startNs + rt + r + end;
+        var m3 = startNs + rt.replace( '<node/>', rt.replace( /repeat/g, 'nr' ) ) + end;
+        var m4 = startNs + rt.replace( '<node/>', rt.replace( /repeat/g, 'nr' ) + r.replace( /repeat/g, 'nr' ) ) + end;
 
         it( 'get added to newly cloned repeats', function() {
             var model = new Model( m1 );
@@ -725,7 +787,42 @@ describe( 'Ordinals in repeats', function() {
                 '<repeat enk:last-used-ordinal="2" enk:ordinal="1"><node/></repeat><repeat enk:ordinal="2"><node/></repeat>'
             ) );
         } );
-    } );
 
+        it( 'get added to newly cloned repeats if multiple instances are present in default model', function() {
+            var model = new Model( m2 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat', 1 );
+            expect( model.getStr() ).toEqual( wrt.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="3" enk:ordinal="1"><node/></repeat><repeat enk:ordinal="2"><node/></repeat>' +
+                '<repeat enk:ordinal="3"><node/></repeat>' ) );
+        } );
+
+        it( 'get added to newly cloned NESTED repeats', function() {
+            var model = new Model( m3 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 1 );
+            expect( model.getStr() ).toEqual( wrt.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="2" enk:ordinal="1">' +
+                '<nr enk:last-used-ordinal="3" enk:ordinal="1"><node/></nr><nr enk:ordinal="2"><node/></nr><nr enk:ordinal="3"><node/></nr>' +
+                '</repeat><repeat enk:ordinal="2"><nr><node/></nr></repeat>' ) );
+        } );
+
+        it( 'get added to newly cloned NESTED repeats if multiple instances of the nested repeat are present in default model', function() {
+            var model = new Model( m4 );
+            model.init();
+            model.cloneRepeat( '/root/repeat', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 0 );
+            model.cloneRepeat( '/root/repeat/nr', 2 );
+            expect( model.getStr() ).toEqual( wrt.replace( '{{c}}',
+                '<repeat enk:last-used-ordinal="2" enk:ordinal="1">' +
+                '<nr enk:last-used-ordinal="2" enk:ordinal="1"><node/></nr><nr enk:ordinal="2"><node/></nr>' +
+                '</repeat>' +
+                '<repeat enk:ordinal="2"><nr enk:last-used-ordinal="2" enk:ordinal="1"><node/></nr><nr enk:ordinal="2"><node/></nr></repeat>' ) );
+        } );
+
+    } );
 
 } );
