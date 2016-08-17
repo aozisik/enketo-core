@@ -689,8 +689,8 @@ define( function( require, exports, module ) {
 
 
     FormModel.prototype.getXmlFragmentStr = function( node ) {
-        var clone;
-        var n;
+        var $clone;
+        var $n;
         var rootNodeName;
         var i;
         var siblingsAndSelf;
@@ -699,27 +699,18 @@ define( function( require, exports, module ) {
         var tempAttrName = 'temp-id';
         var id = Math.floor( Math.random() * 100000000 );
         node.setAttribute( tempAttrName, id );
-        clone = node.ownerDocument.querySelector( 'instance > *' ).cloneNode( true );
-        rootNodeName = clone.nodeName;
+        $clone = $( this.rootElement ).clone();
+        rootNodeName = $clone.prop( 'nodeName' );
         node.removeAttribute( tempAttrName );
-        n = clone.querySelector( '[temp-id="' + id + '"]' );
-        n.removeAttribute( tempAttrName );
-        //n.children.remove();
-        children = Array.prototype.slice.call( n.children || [] );
-        for ( i = 0; i < children.length; i++ ) {
-            children[ i ].remove();
-        }
-        while ( n.nodeName !== rootNodeName ) {
-            siblingsAndSelf = Array.prototype.slice.call( n.parentNode.children || [] );
-            for ( i = 0; i < siblingsAndSelf.length; i++ ) {
-                if ( siblingsAndSelf[ i ] !== n ) {
-                    siblingsAndSelf[ i ].remove();
-                }
-            }
-            n = n.parentNode;
+        $n = $clone.find( '[temp-id="' + id + '"]' );
+        $n.removeAttr( tempAttrName );
+        $n.children().remove();
+        while ( $n.prop( 'nodeName' ) !== rootNodeName ) {
+            $n.siblings().remove();
+            $n = $n.parent();
         }
         //console.debug( 'clone after cleaning', clone );
-        dataStr = ( new XMLSerializer() ).serializeToString( clone, 'text/xml' );
+        dataStr = ( new XMLSerializer() ).serializeToString( $clone[ 0 ], 'text/xml' );
         // remove tabs
         dataStr = dataStr.replace( /\t/g, '' );
         // restore default namespaces
@@ -1303,6 +1294,8 @@ define( function( require, exports, module ) {
         } );
         return vals;
     };
+
+
 
     /**
      * Determines the index of a repeated node amongst all nodes with the same XPath selector
