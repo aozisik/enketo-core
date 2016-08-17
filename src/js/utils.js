@@ -80,9 +80,49 @@ define( function( require, exports, module ) {
         return '';
     }
 
+    /**
+     * Cross-browser (and PhantomJS) way to obtain siblings Elements
+     * 
+     * @return {<Element>} [description]
+     */
+    function getSiblings( node ) {
+        var siblings = [];
+        var n = ( ( node || {} ).parentNode || {} ).firstChild;
+
+        for ( ; n; n = n.nextSibling ) {
+            if ( n.nodeType === 1 && n !== node ) {
+                siblings.push( n );
+            }
+        }
+
+        return siblings;
+    }
+
+    /**
+     * Cross-browser (and PhantomJS) way to obtain child Elements
+     * 
+     * @return {<Element>} [description]
+     */
+    function getChildren( node ) {
+        var n = node || {};
+        var fc = node.firstChild;
+        var children = fc && fc.nodeType === 1 ? [ fc ] : [];
+
+        children.concat( getSiblings( fc ) );
+
+        return children;
+    }
+
+    function removeNode( node ) {
+        node.remove();
+    }
+
     module.exports = {
         parseFunctionFromExpression: parseFunctionFromExpression,
         stripQuotes: stripQuotes,
-        getFilename: getFilename
+        getFilename: getFilename,
+        getSiblings: getSiblings,
+        getChildren: getChildren,
+        removeNode: removeNode
     };
 } );

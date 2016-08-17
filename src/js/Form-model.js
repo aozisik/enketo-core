@@ -680,8 +680,6 @@ define( function( require, exports, module ) {
      */
     FormModel.prototype.getStr = function() {
         var dataStr = ( new XMLSerializer() ).serializeToString( this.xml.querySelector( 'instance > *' ) || this.xml.documentElement, 'text/xml' );
-        // remove tabs
-        dataStr = dataStr.replace( /\t/g, '' );
         // restore default namespaces
         dataStr = dataStr.replace( /\s(data-)(xmlns\=("|')[^\s\>]+("|'))/g, ' $2' );
         return dataStr;
@@ -689,30 +687,25 @@ define( function( require, exports, module ) {
 
 
     FormModel.prototype.getXmlFragmentStr = function( node ) {
-        var $clone;
-        var $n;
-        var rootNodeName;
-        var i;
-        var siblingsAndSelf;
-        var children;
+        var clone;
+        var n;
         var dataStr;
         var tempAttrName = 'temp-id';
         var id = Math.floor( Math.random() * 100000000 );
         node.setAttribute( tempAttrName, id );
-        $clone = $( this.rootElement ).clone();
-        rootNodeName = $clone.prop( 'nodeName' );
+        clone = this.rootElement.cloneNode( true );
         node.removeAttribute( tempAttrName );
-        $n = $clone.find( '[temp-id="' + id + '"]' );
-        $n.removeAttr( tempAttrName );
-        $n.children().remove();
-        while ( $n.prop( 'nodeName' ) !== rootNodeName ) {
-            $n.siblings().remove();
-            $n = $n.parent();
+        n = clone.querySelector( '[temp-id="' + id + '"]' );
+        n.removeAttribute( tempAttrName );
+
+        utils.getChildren( n ).forEach( utils.removeNode );
+
+        while ( n !== clone ) {
+            utils.getSiblings( n ).forEach( utils.removeNode );
+            n = n.parentNode;
         }
-        //console.debug( 'clone after cleaning', clone );
-        dataStr = ( new XMLSerializer() ).serializeToString( $clone[ 0 ], 'text/xml' );
-        // remove tabs
-        dataStr = dataStr.replace( /\t/g, '' );
+
+        dataStr = ( new XMLSerializer() ).serializeToString( clone, 'text/xml' );
         // restore default namespaces
         dataStr = dataStr.replace( /\s(data-)(xmlns\=("|')[^\s\>]+("|'))/g, ' $2' );
         return dataStr;
