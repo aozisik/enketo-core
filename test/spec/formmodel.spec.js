@@ -686,11 +686,11 @@ describe( 'Ordinals in repeats', function() {
 
 
     beforeAll( function() {
-        config[ 'repeat ordinals' ] = true;
+        config.repeatOrdinals = true;
     } );
 
     afterAll( function() {
-        config[ 'repeat ordinals' ] = dflt;
+        config.repeatOrdinals = dflt;
     } );
 
     describe( 'that have no jr:template', function() {
@@ -852,6 +852,19 @@ describe( 'Ordinals in repeats', function() {
                 '</repeat><repeat enk:ordinal="3"><nr><node/></nr></repeat>' ) );
         } );
 
+    } );
+
+} );
+
+
+describe( 'getting XML fragments', function() {
+
+    it( 'works', function() {
+        var x = '<model><instance><data><a>a</a><b/><c><c1>1</c1><c2>2</c2></c></data></instance></model>';
+        var model = new Model( x );
+        model.init();
+        expect( model.getXmlFragmentStr( model.xml.querySelector( 'b' ) ) ).toEqual( '<data><b/></data>' );
+        expect( model.getXmlFragmentStr( model.xml.querySelector( 'c2' ) ) ).toEqual( '<data><c><c2>2</c2></c></data>' );
     } );
 
 } );

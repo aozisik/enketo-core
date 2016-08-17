@@ -299,11 +299,11 @@ describe( 'repeat functionality', function() {
         var config = require( 'text!enketo-config' );
         var dflt = config[ 'repeat ordinals' ];
         beforeAll( function() {
-            config[ 'repeat ordinals' ] = true;
+            config.repeatOrdinals = true;
         } );
 
         afterAll( function() {
-            config[ 'repeat ordinals' ] = dflt;
+            config.repeatOrdinals = dflt;
         } );
         // this test is only interested in the model, but adding ordinals to default repeat instances is directed
         // by Form.js
