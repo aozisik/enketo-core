@@ -8,5 +8,5 @@
         "name": "satellite"
     } ],
     "googleApiKey": "",
-    "repeat ordinals": false
+    "repeatOrdinals": false
 }

@@ -527,7 +527,7 @@ define( function( require, exports, module ) {
         }
 
         function addOrdinalAttribute( el ) {
-            if ( config[ 'repeat ordinals' ] === true && !el.getAttribute( enkNs + ':ordinal' ) ) {
+            if ( config.repeatOrdinals === true && !el.getAttribute( enkNs + ':ordinal' ) ) {
                 el.setAttribute( enkNs + ':ordinal', incrementAndGetOrdinal() );
             }
         }
@@ -687,6 +687,46 @@ define( function( require, exports, module ) {
         return dataStr;
     };
 
+
+    FormModel.prototype.getXmlFragmentStr = function( node ) {
+        var clone;
+        var n;
+        var rootNodeName;
+        var i;
+        var siblingsAndSelf;
+        var children;
+        var dataStr;
+        var tempAttrName = 'temp-id';
+        var id = Math.floor( Math.random() * 100000000 );
+        node.setAttribute( tempAttrName, id );
+        clone = node.ownerDocument.querySelector( 'instance > *' ).cloneNode( true );
+        rootNodeName = clone.nodeName;
+        node.removeAttribute( tempAttrName );
+        n = clone.querySelector( '[temp-id="' + id + '"]' );
+        n.removeAttribute( tempAttrName );
+        //n.children.remove();
+        children = Array.prototype.slice.call( n.children || [] );
+        for ( i = 0; i < children.length; i++ ) {
+            children[ i ].remove();
+        }
+        while ( n.nodeName !== rootNodeName ) {
+            siblingsAndSelf = Array.prototype.slice.call( n.parentNode.children || [] );
+            for ( i = 0; i < siblingsAndSelf.length; i++ ) {
+                if ( siblingsAndSelf[ i ] !== n ) {
+                    siblingsAndSelf[ i ].remove();
+                }
+            }
+            n = n.parentNode;
+        }
+        //console.debug( 'clone after cleaning', clone );
+        dataStr = ( new XMLSerializer() ).serializeToString( clone, 'text/xml' );
+        // remove tabs
+        dataStr = dataStr.replace( /\t/g, '' );
+        // restore default namespaces
+        dataStr = dataStr.replace( /\s(data-)(xmlns\=("|')[^\s\>]+("|'))/g, ' $2' );
+        return dataStr;
+    };
+
     /**
      * There is a huge bug in JavaRosa that has resulted in the usage of incorrect formulae on nodes inside repeat nodes.
      * Those formulae use absolute paths when relative paths should have been used. See more here:
@@ -770,7 +810,7 @@ define( function( require, exports, module ) {
             [
                 [ 'orx', this.OPENROSA_XFORMS_NS, false ],
                 [ 'jr', this.JAVAROSA_XFORMS_NS, false ],
-                [ 'enk', this.ENKETO_XFORMS_NS, config[ 'repeat ordinals' ] === true ]
+                [ 'enk', this.ENKETO_XFORMS_NS, config.repeatOrdinals === true ]
             ].forEach( function( arr ) {
                 if ( !that.getNamespacePrefix( arr[ 1 ] ) ) {
                     prefix = ( !that.namespaces[ arr[ 0 ] ] ) ? arr[ 0 ] : '__' + arr[ 0 ];
@@ -1221,9 +1261,9 @@ define( function( require, exports, module ) {
             success = this.validate( expr, xmlDataType );
             updated = this.getClosestRepeat();
             updated.nodes = [ $target.prop( 'nodeName' ) ];
-            updated.fullPath = this.model.getXPath( $target.get( 0 ), 'instance', true );
-            updated.value = newVal.toString();
+            //updated.fullPath = this.model.getXPath( $target.get( 0 ), 'instance', true );
             updated.valid = success;
+            updated.xmlFragment = this.model.getXmlFragmentStr( $target.get( 0 ) );
             updated.file = ( xmlDataType === 'binary' );
 
             this.model.$.trigger( 'dataupdate', updated );
