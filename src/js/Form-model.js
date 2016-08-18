@@ -699,10 +699,10 @@ define( function( require, exports, module ) {
         n = clone.querySelector( '[temp-id="' + id + '"]' );
         n.removeAttribute( tempAttrName );
 
-        utils.getChildren( n ).forEach( utils.removeNode );
+        $( n ).children().remove();
 
         while ( n !== clone ) {
-            utils.getSiblings( n ).forEach( utils.removeNode );
+            $( n ).siblings().remove();
             n = n.parentNode;
         }
 

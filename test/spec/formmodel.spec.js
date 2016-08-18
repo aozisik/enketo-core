@@ -888,4 +888,11 @@ describe( 'getting XML fragments', function() {
         expect( model.getXmlFragmentStr( model.xml.querySelectorAll( 'r' )[ 1 ] ) ).toEqual( '<data xmlns:enk="http://enketo.org/xforms"><r enk:ordinal="3"/></data>' );
     } );
 
+    it( 'works for models that include tricky text nodes with carriage returns', function() {
+        var model = getModel( 'nested_repeats.xml' );
+        model.init();
+        expect( model.getXmlFragmentStr( model.xml.querySelector( 'kids_details' ) ).replace( />\s+</g, '><' ) ).toEqual(
+            '<nested_repeats xmlns:jr="http://openrosa.org/javarosa" xmlns:orx="http://openrosa.org/xforms/" id="nested_repeats"><kids><kids_details></kids_details></kids></nested_repeats>' );
+    } );
+
 } );
