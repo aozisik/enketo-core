@@ -533,12 +533,14 @@ define( function( require, exports, module ) {
         }
 
         function removeOrdinalAttributes( el ) {
-            // find all nested repeats first
-            var repeats = Array.prototype.slice.call( el.querySelectorAll( '[' + enkNs + '\\:ordinal]' ) );
-            repeats.push( el );
-            for ( var i = 0; i < repeats.length; i++ ) {
-                repeats[ i ].removeAttribute( enkNs + ':last-used-ordinal' );
-                repeats[ i ].removeAttribute( enkNs + ':ordinal' );
+            if ( config.repeatOrdinals === true ) {
+                // find all nested repeats first
+                var repeats = Array.prototype.slice.call( el.querySelectorAll( '[' + enkNs + '\\:ordinal]' ) );
+                repeats.push( el );
+                for ( var i = 0; i < repeats.length; i++ ) {
+                    repeats[ i ].removeAttribute( enkNs + ':last-used-ordinal' );
+                    repeats[ i ].removeAttribute( enkNs + ':ordinal' );
+                }
             }
         }
 
@@ -1250,6 +1252,7 @@ define( function( require, exports, module ) {
             updated.fullPath = this.model.getXPath( $target.get( 0 ), 'instance', true );
             updated.xmlFragment = this.model.getXmlFragmentStr( $target.get( 0 ) );
             updated.file = ( xmlDataType === 'binary' );
+            updated.empty = !newVal.toString();
 
             this.model.$.trigger( 'dataupdate', updated );
             //add type="file" attribute for file references
