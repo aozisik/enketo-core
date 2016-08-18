@@ -1247,6 +1247,7 @@ define( function( require, exports, module ) {
             updated = this.getClosestRepeat();
             updated.nodes = [ $target.prop( 'nodeName' ) ];
             updated.valid = success;
+            updated.fullPath = this.model.getXPath( $target.get( 0 ), 'instance', true );
             updated.xmlFragment = this.model.getXmlFragmentStr( $target.get( 0 ) );
             updated.file = ( xmlDataType === 'binary' );
 
