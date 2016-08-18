@@ -1953,7 +1953,6 @@ define( function( require, exports, module ) {
                 that.itemsetUpdate( updated );
                 // edit is fired when the model changes after the form has been initialized
                 that.editStatus.set( true );
-                $form.trigger( 'fieldchange.enketo', updated );
             } );
 
             $form.on( 'addrepeat', function( event, index ) {

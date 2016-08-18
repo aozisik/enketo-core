@@ -581,7 +581,8 @@ define( function( require, exports, module ) {
                 this.$.trigger( 'dataupdate', {
                     nodes: allClonedNodeNames,
                     repeatPath: selector,
-                    repeatIndex: that.node( selector, index ).determineIndex( $templateClone )
+                    repeatIndex: that.node( selector, index ).determineIndex( $templateClone ),
+                    cloned: true
                 } );
             }
         } else {
@@ -1245,7 +1246,6 @@ define( function( require, exports, module ) {
             success = this.validate( expr, xmlDataType );
             updated = this.getClosestRepeat();
             updated.nodes = [ $target.prop( 'nodeName' ) ];
-            //updated.fullPath = this.model.getXPath( $target.get( 0 ), 'instance', true );
             updated.valid = success;
             updated.xmlFragment = this.model.getXmlFragmentStr( $target.get( 0 ) );
             updated.file = ( xmlDataType === 'binary' );
@@ -1342,6 +1342,7 @@ define( function( require, exports, module ) {
         var $this;
         var repeatPath;
         var repeatIndex;
+        var xmlFragmentStr;
 
         $dataNode = this.get();
 
@@ -1356,6 +1357,7 @@ define( function( require, exports, module ) {
 
             repeatPath = this.model.getXPath( $dataNode.get( 0 ), 'instance' );
             repeatIndex = this.determineIndex( $dataNode );
+            xmlFragmentStr = this.model.getXmlFragmentStr( $dataNode.get( 0 ) );
 
             $dataNode.remove();
             this.nodes = null;
@@ -1363,7 +1365,9 @@ define( function( require, exports, module ) {
             this.model.$.trigger( 'dataupdate', {
                 updatedNodes: allRemovedNodeNames,
                 repeatPath: repeatPath,
-                repeatIndex: repeatIndex
+                repeatIndex: repeatIndex,
+                xmlFragment: xmlFragmentStr,
+                removed: true
             } );
         } else {
             console.error( 'could not find node ' + this.selector + ' with index ' + this.index + ' to remove ' );
