@@ -859,12 +859,33 @@ describe( 'Ordinals in repeats', function() {
 
 describe( 'getting XML fragments', function() {
 
-    it( 'works', function() {
-        var x = '<model><instance><data><a>a</a><b/><c><c1>1</c1><c2>2</c2></c></data></instance></model>';
+    it( 'works for simple models', function() {
+        var x = '<model><instance><data><a>a</a><b/><c><c1>1</c1><c2>2</c2></c><meta><instanceID/></meta></data></instance></model>';
         var model = new Model( x );
         model.init();
         expect( model.getXmlFragmentStr( model.xml.querySelector( 'b' ) ) ).toEqual( '<data><b/></data>' );
         expect( model.getXmlFragmentStr( model.xml.querySelector( 'c2' ) ) ).toEqual( '<data><c><c2>2</c2></c></data>' );
+    } );
+
+    it( 'works for primary instances with a default namespace', function() {
+        var x = '<model><instance><data xmlns="https://some.namespace.com/"><a>a</a><b/><c><c1>1</c1><c2>2</c2></c><meta><instanceID/></meta></data></instance></model>';
+        var model = new Model( x );
+        model.init();
+        expect( model.getXmlFragmentStr( model.xml.querySelector( 'b' ) ) ).toEqual( '<data xmlns="https://some.namespace.com/"><b/></data>' );
+        expect( model.getXmlFragmentStr( model.xml.querySelector( 'c2' ) ) ).toEqual( '<data xmlns="https://some.namespace.com/"><c><c2>2</c2></c></data>' );
+    } );
+
+    it( 'works for models that include namespaced attributes and repeats', function() {
+        var x = '<model><instance><data xmlns:enk="http://enketo.org/xforms"><a>a</a><b/>' +
+            '<r enk:last-used-ordinal="3" enk:ordinal="1"><n>n</n></r><r enk:ordinal="3"><n>n</n></r>' +
+            '<meta><instanceID/></meta></data></instance></model>';
+        var model = new Model( x );
+        model.init();
+        expect( model.getXmlFragmentStr( model.xml.querySelector( 'b' ) ) ).toEqual( '<data xmlns:enk="http://enketo.org/xforms"><b/></data>' );
+        expect( model.getXmlFragmentStr( model.xml.querySelector( 'r' ) ) ).toEqual( '<data xmlns:enk="http://enketo.org/xforms"><r enk:last-used-ordinal="3" enk:ordinal="1"/></data>' );
+        expect( model.getXmlFragmentStr( model.xml.querySelector( 'n' ) ) ).toEqual( '<data xmlns:enk="http://enketo.org/xforms"><r enk:last-used-ordinal="3" enk:ordinal="1"><n>n</n></r></data>' );
+        expect( model.getXmlFragmentStr( model.xml.querySelectorAll( 'n' )[ 1 ] ) ).toEqual( '<data xmlns:enk="http://enketo.org/xforms"><r enk:ordinal="3"><n>n</n></r></data>' );
+        expect( model.getXmlFragmentStr( model.xml.querySelectorAll( 'r' )[ 1 ] ) ).toEqual( '<data xmlns:enk="http://enketo.org/xforms"><r enk:ordinal="3"/></data>' );
     } );
 
 } );
