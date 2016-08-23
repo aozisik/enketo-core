@@ -147,13 +147,10 @@ describe( 'Date node (&) value getter', function() {
 } );
 
 describe( 'Data node XML data type conversion & validation', function() {
-    var i, data,
+    var i, data, result,
         t = [
             [ '/thedata/nodeA', null, null, 'val1', null, true ],
             [ '/thedata/nodeA', null, null, 'val3', 'somewrongtype', true ], //default type is string
-
-            [ '/thedata/nodeA', 1, null, 'val13', 'string', null ], //non-existing node
-            [ '/thedata/repeatGroup/nodeC', null, null, 'val', null, null ], //multiple nodes
 
             [ '/thedata/nodeA', 0, null, '4', 'double', true ], //double is a non-existing xml data type so turned into string
             [ '/thedata/nodeA', 0, null, 5, 'double', true ],
@@ -231,9 +228,9 @@ describe( 'Data node XML data type conversion & validation', function() {
     function test( n ) {
         it( 'converts and validates xml-type ' + n.type + ' with value: ' + n.value, function( done ) {
             data = getModel( 'thedata.xml' ); //dataStr1);
-            data.node( n.selector, n.index, n.filter ).setVal( n.value, null, n.type )
-                .then( function( result ) {
-                    expect( result ).toEqual( n.result );
+            result = data.node( n.selector, n.index, n.filter ).setVal( n.value, null, n.type );
+            result.validCheck.then( function( passed ) {
+                    expect( passed ).toEqual( n.result );
                 } )
                 .then( done )
                 .catch( done );
@@ -251,14 +248,23 @@ describe( 'Data node XML data type conversion & validation', function() {
         } );
     }
 
+    it( 'returns a null result for a non-existing node', function() {
+        data = getModel( 'thedata.xml' );
+        expect( data.node( '/thedata/nodeA', 1, null ).setVal( 'val13', null, 'string' ) ).toEqual( null );
+    } );
+
+    it( 'returns a null result when attempting to set the value of multiple nodes', function() {
+        data = getModel( 'thedata.xml' );
+        expect( data.node( '/thedata/repeatGroup/nodeC', null, null ).setVal( 'val', null, null ) ).toEqual( null );
+    } );
+
     it( 'sets a non-empty value to empty', function( done ) {
         var node = getModel( 'thedata.xml' ).node( '/thedata/nodeA', null, null );
-        node.setVal( 'value', null, 'string' )
-            .then( function() {
-                return node.setVal( '' );
-            } )
-            .then( function( result ) {
-                expect( result ).toBe( true );
+        node.setVal( 'value', null, 'string' );
+        var result = node.setVal( '' );
+        result.validCheck
+            .then( function( passed ) {
+                expect( passed ).toBe( true );
             } )
             .then( done )
             .catch( done );

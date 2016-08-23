@@ -1891,13 +1891,11 @@ define( function( require, exports, module ) {
             } );
 
             // Why is the file namespace added?
-            $form.on( 'change.file validate', 'input:not(.ignore), select:not(.ignore), textarea:not(.ignore)', function( event ) {
+            $form.on( 'change.file', 'input:not(.ignore), select:not(.ignore), textarea:not(.ignore)', function( event ) {
                 that.validateInput( event.type, $( this ) );
 
                 // propagate event externally after internal processing is completed
-                if ( event.type === 'change' ) {
-                    $form.trigger( 'valuechange.enketo' );
-                }
+                $form.trigger( 'valuechange.enketo' );
             } );
 
             // doing this on the focus event may have little effect on performance, because nothing else is happening :)
@@ -1953,6 +1951,7 @@ define( function( require, exports, module ) {
                 that.itemsetUpdate( updated );
                 // edit is fired when the model changes after the form has been initialized
                 that.editStatus.set( true );
+                console.debug( 'dataupdate handling done', updated );
             } );
 
             $form.on( 'addrepeat', function( event, index ) {
@@ -2118,9 +2117,12 @@ define( function( require, exports, module ) {
          */
         FormView.prototype.validateInput = function( eventType, $input ) {
             var that = this;
-            var validCons;
-            var validReq;
+            var validCheck;
+            var requiredCheck;
             var _dataNodeObj;
+            var requiredExpr;
+            var constraintExpr;
+            var updated;
             // all relevant properties, except for the **very expensive** index property
             var n = {
                 path: that.input.getName( $input ),
@@ -2140,65 +2142,60 @@ define( function( require, exports, module ) {
                 return _dataNodeObj;
             };
 
-
             // set file input values to the actual name of file (without c://fakepath or anything like that)
             if ( n.val.length > 0 && n.inputType === 'file' && $input[ 0 ].files[ 0 ] && $input[ 0 ].files[ 0 ].size > 0 ) {
                 n.val = utils.getFilename( $input[ 0 ].files[ 0 ], $input[ 0 ].dataset.filenamePostfix );
+            }
+
+            // determine 'required' check if applicable
+            if ( n.enabled && n.inputType !== 'hidden' && n.required ) {
+                requiredExpr = n.required;
             }
 
             if ( eventType === 'validate' ) {
                 // The enabled check serves a purpose only when an input field itself is marked as enabled but its parent fieldset is not.
                 // If an element is disabled mark it as valid (to undo a previously shown branch with fields marked as invalid).
                 if ( !n.enabled || n.inputType === 'hidden' ) {
-                    validCons = Promise.resolve( true );
+                    validCheck = Promise.resolve( true );
                 } else
                 // Use a dirty trick to not have to determine the index with the following insider knowledge.
                 // It could potentially be sped up more by excluding n.val === "", but this would not be safe, in case the view is not in sync with the model.
                 if ( !n.constraint && ( n.xmlType === 'string' || n.xmlType === 'select' || n.xmlType === 'select1' || n.xmlType === 'binary' ) ) {
-                    validCons = Promise.resolve( true );
+                    validCheck = Promise.resolve( true );
                 } else {
-                    validCons = getDataNodeObj().validate( n.constraint, n.xmlType );
-                }
-            } else {
-                validCons = getDataNodeObj().setVal( n.val, n.constraint, n.xmlType )
-                    .then( function( validCons ) {
-                        // geotrace and geoshape are very complex data types that require various change events
-                        // to avoid annoying users, we ignore the INVALID onchange validation result
-                        return ( validCons === false && ( n.xmlType === 'geotrace' || n.xmlType === 'geoshape' ) ) ? null : validCons;
-                    } );
-            }
-
-            // validate 'required', checking value in Model (not View)
-            if ( n.enabled && n.inputType !== 'hidden' && n.required && getDataNodeObj().getVal()[ 0 ].length === 0 ) {
-                // If result of required expression evaluation is true, it does not pass.
-                // n.ind has been populated in the getDataNodeObj call
-                validReq = !model.evaluate( n.required, 'boolean', n.path, n.ind, false );
-            } else {
-                validReq = true;
-            }
-
-            if ( validReq === false ) {
-                that.setValid( $input, 'constraint' );
-                if ( eventType === 'validate' ) {
-                    that.setInvalid( $input, 'required' );
+                    validCheck = getDataNodeObj().validateConstraintAndType( n.constraint, n.xmlType );
                 }
 
-                return Promise.resolve( false );
+                requiredCheck = getDataNodeObj().validateRequired( requiredExpr );
             } else {
-                that.setValid( $input, 'required' );
-                return validCons
-                    .then( function( validCons ) {
-                        if ( typeof validCons !== 'undefined' && validCons === false ) {
-                            that.setInvalid( $input, 'constraint' );
-                        } else if ( validCons !== null ) {
-                            that.setValid( $input, 'constraint' );
+                updated = getDataNodeObj().setVal( n.val, n.constraint, n.xmlType, requiredExpr );
+                validCheck = ( updated ) ? updated.validCheck : Promise.resolve( null );
+                requiredCheck = ( updated ) ? updated.requiredCheck : Promise.resolve( null );
+            }
+
+            return requiredCheck
+                .then( function( passed ) {
+                    if ( passed === false ) {
+                        that.setValid( $input, 'constraint' );
+                        if ( eventType === 'validate' ) {
+                            that.setInvalid( $input, 'required' );
                         }
-                    } )
-                    .catch( function( e ) {
+                        return null;
+                    } else {
+                        that.setValid( $input, 'required' );
+                        return validCheck;
+                    }
+                } ).then( function( passed ) {
+                    if ( passed === false ) {
                         that.setInvalid( $input, 'constraint' );
-                        throw e;
-                    } );
-            }
+                    } else if ( passed !== null ) {
+                        that.setValid( $input, 'constraint' );
+                    }
+                } )
+                .catch( function( e ) {
+                    that.setInvalid( $input, 'constraint' );
+                    throw e;
+                } );
         };
     }
 

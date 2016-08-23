@@ -1227,8 +1227,6 @@ define( function( require, exports, module ) {
         var $target;
         var curVal;
         var /**@type {string}*/ newVal;
-        var validCheck;
-        var requiredCheck;
         var updated;
 
         curVal = this.getVal()[ 0 ];
@@ -1246,15 +1244,13 @@ define( function( require, exports, module ) {
             // first change the value so that it can be evaluated in XPath (validated)
             $target.text( newVal.toString() );
             // then return validation result
-            validCheck = this.validateConstraintAndType( constraintExpr, xmlDataType );
-            requiredCheck = this.validateRequired( requiredExpr );
             updated = this.getClosestRepeat();
             updated.nodes = [ $target.prop( 'nodeName' ) ];
-            updated.validCheck = validCheck;
-            updated.requiredCheck = requiredCheck;
+            updated.validCheck = this.validateConstraintAndType( constraintExpr, xmlDataType );
+            updated.requiredCheck = this.validateRequired( requiredExpr );
             updated.fullPath = this.model.getXPath( $target.get( 0 ), 'instance', true );
             updated.xmlFragment = this.model.getXmlFragmentStr( $target.get( 0 ) );
-            updated.file = ( xmlDataType === 'binary' );
+            updated.file = ( xmlDataType === 'binary' ) ? newVal.toString() : false;
             updated.empty = !newVal.toString();
 
             this.model.$.trigger( 'dataupdate', updated );
@@ -1266,20 +1262,18 @@ define( function( require, exports, module ) {
                     $target.removeAttr( 'type' );
                 }
             }
-
-            return validCheck;
+            return updated;
         }
         if ( $target.length > 1 ) {
             console.error( 'nodeset.setVal expected nodeset with one node, but received multiple' );
-            return Promise.resolve( null );
+            return null;
         }
         if ( $target.length === 0 ) {
             console.log( 'Data node: ' + this.selector + ' with null-based index: ' + this.index + ' not found. Ignored.' );
-            return Promise.resolve( null );
+            return null;
         }
-        //always validate if the new value is not empty, even if value didn't change (see validateAll() function)
-        //return (newVal.length > 0 && validateAll) ? this.validate(expr, xmlDataType) : true;
-        return Promise.resolve( null );
+
+        return null;
     };
 
     /**
@@ -1441,13 +1435,16 @@ define( function( require, exports, module ) {
         var that = this;
         var value;
 
+        // if the node has a value or there is no required expression
         if ( !expr || this.getVal()[ 0 ] ) {
             return Promise.resolve( true );
         }
 
+        // if the node does not have a value and there is a required expression
         return Promise.resolve()
             .then( function() {
-                return that.model.evaluate( expr, 'boolean', that.originalSelector, that.index );
+                // if the expression evaluates to true, the field is required, and the function returns false.
+                return !that.model.evaluate( expr, 'boolean', that.originalSelector, that.index );
             } );
     };
 

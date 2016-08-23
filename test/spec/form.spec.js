@@ -372,10 +372,10 @@ describe( 'branching functionality', function() {
     } );
 
     /*
-	Issue 208 was a combination of two issues:
-		1. branch logic wasn't evaluated on repeated radiobuttons (only on the original) in branch.update()
-		2. position[i] wasn't properly injected in makeBugCompiant() if the context node was a radio button or checkbox
-	 */
+    Issue 208 was a combination of two issues:
+        1. branch logic wasn't evaluated on repeated radiobuttons (only on the original) in branch.update()
+        2. position[i] wasn't properly injected in makeBugCompiant() if the context node was a radio button or checkbox
+     */
     it( 'a) evaluates relevant logic on a repeated radio-button-question and b) injects the position correctly (issue 208)', function() {
         var repeatSelector = '.or-repeat[name="/issue208/rep"]';
         var form = loadForm( 'issue208.xml' );
@@ -496,21 +496,35 @@ describe( 'Required field validation', function() {
         expect( $numberLabel.hasClass( 'invalid-required' ) ).toBe( false );
     } );
 
-    it( 'invalidates an enabled and required number field without a value', function() {
+    // failing
+    it( 'invalidates an enabled and required number field without a value', function( done ) {
+        // first make branch relevant
         form.getView().$.find( '[name="/data/nodeA"]' ).val( 'yes' ).trigger( 'change' );
-        $numberInput.val( '' ).trigger( 'change' ).trigger( 'validate' );
-        expect( $numberLabel.hasClass( 'invalid-required' ) ).toBe( true );
+        // now set value to empty
+        $numberInput.val( '' ).trigger( 'change' );
+        form.getView().validateInput( 'validate', $numberInput )
+            .then( function() {
+                expect( $numberLabel.hasClass( 'invalid-required' ) ).toBe( true );
+                done();
+            } );
     } );
 
-    it( 'invalidates an enabled and required textarea that contains only a newline character or other whitespace characters', function() {
+    it( 'invalidates an enabled and required textarea that contains only a newline character or other whitespace characters', function( done ) {
         form = loadForm( 'thedata.xml' );
         form.init();
         var $textarea = form.getView().$.find( '[name="/thedata/nodeF"]' );
-        $textarea.val( '\n' ).trigger( 'change' ).trigger( 'validate' );
-        expect( $textarea.length ).toEqual( 1 );
-        expect( $textarea.parent( 'label' ).hasClass( 'invalid-required' ) ).toBe( true );
-        $textarea.val( '  \n  \n\r \t ' ).trigger( 'change' ).trigger( 'validate' );
-        expect( $textarea.parent( 'label' ).hasClass( 'invalid-required' ) ).toBe( true );
+        $textarea.val( '\n' ).trigger( 'change' );
+        form.getView().validateInput( 'validate', $textarea )
+            .then( function() {
+                expect( $textarea.length ).toEqual( 1 );
+                expect( $textarea.parent( 'label' ).hasClass( 'invalid-required' ) ).toBe( true );
+                $textarea.val( '  \n  \n\r \t ' ).trigger( 'change' );
+                return form.getView().validateInput( 'validate', $textarea );
+            } )
+            .then( function() {
+                expect( $textarea.parent( 'label' ).hasClass( 'invalid-required' ) ).toBe( true );
+                done();
+            } );
     } );
 } );
 
