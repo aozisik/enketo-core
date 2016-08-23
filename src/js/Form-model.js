@@ -1223,11 +1223,12 @@ define( function( require, exports, module ) {
      * @return {Promise} wrapping {?boolean}; null is returned when the node is not found or multiple nodes were selected,
      *                            otherwise the constraint evaluation result true/false is returned.
      */
-    Nodeset.prototype.setVal = function( newVals, expr, xmlDataType ) {
+    Nodeset.prototype.setVal = function( newVals, constraintExpr, xmlDataType, requiredExpr ) {
         var $target;
         var curVal;
         var /**@type {string}*/ newVal;
-        var success;
+        var validCheck;
+        var requiredCheck;
         var updated;
 
         curVal = this.getVal()[ 0 ];
@@ -1245,10 +1246,12 @@ define( function( require, exports, module ) {
             // first change the value so that it can be evaluated in XPath (validated)
             $target.text( newVal.toString() );
             // then return validation result
-            success = this.validate( expr, xmlDataType );
+            validCheck = this.validateConstraintAndType( constraintExpr, xmlDataType );
+            requiredCheck = this.validateRequired( requiredExpr );
             updated = this.getClosestRepeat();
             updated.nodes = [ $target.prop( 'nodeName' ) ];
-            updated.valid = success;
+            updated.validCheck = validCheck;
+            updated.requiredCheck = requiredCheck;
             updated.fullPath = this.model.getXPath( $target.get( 0 ), 'instance', true );
             updated.xmlFragment = this.model.getXmlFragmentStr( $target.get( 0 ) );
             updated.file = ( xmlDataType === 'binary' );
@@ -1264,7 +1267,7 @@ define( function( require, exports, module ) {
                 }
             }
 
-            return success;
+            return validCheck;
         }
         if ( $target.length > 1 ) {
             console.error( 'nodeset.setVal expected nodeset with one node, but received multiple' );
@@ -1402,7 +1405,7 @@ define( function( require, exports, module ) {
      * @param  {?string=} xmlDataType XML datatype
      * @return {Promise} wrapping a boolean indicating if the value is valid or not; error also indicates invalid field, or problem validating it
      */
-    Nodeset.prototype.validate = function( expr, xmlDataType ) {
+    Nodeset.prototype.validateConstraintAndType = function( expr, xmlDataType ) {
         var that = this;
         var value;
 
@@ -1430,6 +1433,21 @@ define( function( require, exports, module ) {
                 var exprValid = ( typeof expr !== 'undefined' && expr !== null && expr.length > 0 ) ? that.model.evaluate( expr, 'boolean', that.originalSelector, that.index ) : true;
 
                 return ( typeValid && exprValid );
+            } );
+    };
+
+
+    Nodeset.prototype.validateRequired = function( expr ) {
+        var that = this;
+        var value;
+
+        if ( !expr || this.getVal()[ 0 ] ) {
+            return Promise.resolve( true );
+        }
+
+        return Promise.resolve()
+            .then( function() {
+                return that.model.evaluate( expr, 'boolean', that.originalSelector, that.index );
             } );
     };
 
