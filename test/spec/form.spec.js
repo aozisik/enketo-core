@@ -502,7 +502,7 @@ describe( 'Required field validation', function() {
         form.getView().$.find( '[name="/data/nodeA"]' ).val( 'yes' ).trigger( 'change' );
         // now set value to empty
         $numberInput.val( '' ).trigger( 'change' );
-        form.getView().validateInput( 'validate', $numberInput )
+        form.getView().validateInput( $numberInput )
             .then( function() {
                 expect( $numberLabel.hasClass( 'invalid-required' ) ).toBe( true );
                 done();
@@ -514,12 +514,12 @@ describe( 'Required field validation', function() {
         form.init();
         var $textarea = form.getView().$.find( '[name="/thedata/nodeF"]' );
         $textarea.val( '\n' ).trigger( 'change' );
-        form.getView().validateInput( 'validate', $textarea )
+        form.getView().validateInput( $textarea )
             .then( function() {
                 expect( $textarea.length ).toEqual( 1 );
                 expect( $textarea.parent( 'label' ).hasClass( 'invalid-required' ) ).toBe( true );
                 $textarea.val( '  \n  \n\r \t ' ).trigger( 'change' );
-                return form.getView().validateInput( 'validate', $textarea );
+                return form.getView().validateInput( $textarea );
             } )
             .then( function() {
                 expect( $textarea.parent( 'label' ).hasClass( 'invalid-required' ) ).toBe( true );
