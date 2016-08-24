@@ -1979,7 +1979,7 @@ define( function( require, exports, module ) {
                 that.itemsetUpdate( updated );
                 // edit is fired when the model changes after the form has been initialized
                 that.editStatus.set( true );
-                console.debug( 'dataupdate handling done', updated );
+                $form.trigger( 'dataupdate.enketo', updated );
             } );
 
             $form.on( 'addrepeat', function( event, index ) {
@@ -2046,7 +2046,7 @@ define( function( require, exports, module ) {
                 if ( $elem.length === 0 ) {
                     return Promise.resolve();
                 }
-                return that.validateInput( 'validate', $elem.eq( 0 ) );
+                return that.validateInput( $elem.eq( 0 ) );
             } ).toArray();
 
             return Promise.all( validations )
@@ -2138,11 +2138,10 @@ define( function( require, exports, module ) {
 
 
         /**
-         * Validates input values AND updates model if event type is not 'validate'.
+         * Validates question values.
          * 
-         * @param  {string} eventType [description]
          * @param  {jQuery} $input    [description]
-         * @return {[type]}           [description]
+         * @return {Promise}           [description]
          */
         FormView.prototype.validateInput = function( $input ) {
             var that = this;
