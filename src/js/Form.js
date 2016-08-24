@@ -223,6 +223,10 @@ define( function( require, exports, module ) {
             //used for testing
             this.$ = $form;
             this.$nonRepeats = {};
+            // Before initializing form view, passthrough dataupdate event externally
+            model.$.on( 'dataupdate', function( event, updated ) {
+                $form.trigger( 'dataupdate.enketo', updated );
+            } );
         }
 
         FormView.prototype.init = function() {
