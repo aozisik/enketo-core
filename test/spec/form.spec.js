@@ -62,6 +62,7 @@ describe( 'Output functionality within repeats', function() {
 describe( 'Preload and MetaData functionality', function() {
     var form, t;
 
+    // Form.js no longer has anything to do with instanceID population. Test should still pass though.
     it( 'ignores a calculate binding on [ROOT]/meta/instanceID', function() {
         form = new Form( mockForms2.formStr2, {
             modelStr: mockForms2.dataStr2
@@ -70,12 +71,14 @@ describe( 'Preload and MetaData functionality', function() {
         expect( form.getModel().node( '/random/meta/instanceID' ).getVal()[ 0 ].length ).toEqual( 41 );
     } );
 
+    // Form.js no longer has anything to do with instanceID population. Test should still pass though.
     it( 'ignores a calculate binding on [ROOT]/orx:meta/orx:instanceID', function() {
         form = loadForm( 'meta-namespace.xml' );
         form.init();
         expect( form.getModel().node( '/data/orx:meta/orx:instanceID' ).getVal()[ 0 ].length ).toEqual( 41 );
     } );
 
+    // Form.js no longer has anything to do with instanceID population. Test should still pass though.
     it( 'generates an instanceID on meta/instanceID WITHOUT preload binding', function() {
         form = new Form( mockForms2.formStr2, {
             modelStr: mockForms2.dataStr2
@@ -86,6 +89,7 @@ describe( 'Preload and MetaData functionality', function() {
         expect( form.getModel().node( '/random/meta/instanceID' ).getVal()[ 0 ].length ).toEqual( 41 );
     } );
 
+    // Form.js no longer has anything to do with instanceID population. Test should still pass though.
     it( 'generates an instanceID WITH preload binding', function() {
         form = new Form( mockForms2.formStr3, {
             modelStr: mockForms2.dataStr2
@@ -97,6 +101,7 @@ describe( 'Preload and MetaData functionality', function() {
         expect( form.getModel().node( '/random/meta/instanceID' ).getVal()[ 0 ].length ).toEqual( 41 );
     } );
 
+    // Form.js no longer has anything to do with instanceID population. Test should still pass though.
     it( 'does not generate a new instanceID if one is already present', function() {
         form = new Form( mockForms2.formStr3, {
             modelStr: mockForms2.dataStr3

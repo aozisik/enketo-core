@@ -131,10 +131,9 @@ define( function( require, exports, module ) {
                 id = 'record';
                 if ( this.data.instanceStr ) {
                     this.mergeXml( this.data.instanceStr );
-                    if ( this.data.submitted ) {
-                        this.deprecateId();
-                    }
                 }
+                // Set the two most important meta fields before any field 'dataupdate' event fires.
+                this.setInstanceIdAndDeprecatedId();
             } catch ( e ) {
                 console.error( e );
                 this.loadErrors.push( 'Error trying to parse XML ' + id + '. ' + e.message );
@@ -407,41 +406,41 @@ define( function( require, exports, module ) {
      * [deprecateId description]
      * @return {[type]} [description]
      */
-    FormModel.prototype.deprecateId = function() {
-        var instanceIdEls;
+    FormModel.prototype.setInstanceIdAndDeprecatedId = function() {
+        var instanceIdObj;
         var instanceIdEl;
-        var deprecatedIdEls;
         var deprecatedIdEl;
         var metaEl;
+        var instanceIdExistingVal;
 
-        /*
-         * When implementing this function using the this.node(selector) to find nodes instead of querySelectorAll,
-         * I found that the results were always empty even if the nodes existed. There seems to be 
-         * some sort of delay in updating the XML Document (in mergeXML) that causes a problem
-         * when the XPath evaluator is used to retrieve nodes.
-         */
+        instanceIdObj = this.getMetaNode( 'instanceID' );
+        instanceIdEl = instanceIdObj.get().get( 0 );
+        instanceIdExistingVal = instanceIdObj.getVal()[ 0 ];
 
-        instanceIdEl = this.getMetaNode( 'instanceID' ).get().get( 0 );
+        if ( this.data.instanceStr && this.data.submitted ) {
+            deprecatedIdEl = this.getMetaNode( 'deprecatedID' ).get().get( 0 );
 
-        if ( !instanceIdEl ) {
-            throw new Error( 'Invalid primary instance. Missing instanceID node.' );
+            // set the instanceID value to empty
+            instanceIdEl.textContent = '';
+
+            // add deprecatedID node if necessary
+            if ( !deprecatedIdEl ) {
+                deprecatedIdEl = $.parseXML( '<deprecatedID/>' ).documentElement;
+                this.xml.adoptNode( deprecatedIdEl );
+                metaEl = this.xml.querySelector( '* > meta' );
+                metaEl.appendChild( deprecatedIdEl );
+            }
         }
 
-        deprecatedIdEl = this.getMetaNode( 'deprecatedID' ).get().get( 0 );
-
-        // add deprecatedID node
-        if ( !deprecatedIdEl ) {
-            deprecatedIdEl = $.parseXML( '<deprecatedID/>' ).documentElement;
-            this.xml.adoptNode( deprecatedIdEl );
-            metaEl = this.xml.querySelector( '* > meta' );
-            metaEl.appendChild( deprecatedIdEl );
+        if ( !instanceIdObj.getVal()[ 0 ] ) {
+            instanceIdObj.setVal( this.evaluate( 'concat("uuid:", uuid())', 'string' ) );
         }
 
-        // give deprecatedID element the value of the instanceId
-        deprecatedIdEl.textContent = instanceIdEl.textContent;
-
-        // set the instanceID value to empty
-        instanceIdEl.textContent = '';
+        // after setting instanceID, give deprecatedID element the old value of the instanceId
+        // ensure dataupdate event fires by using setVal
+        if ( deprecatedIdEl ) {
+            this.getMetaNode( 'deprecatedID' ).setVal( instanceIdExistingVal );
+        }
     };
 
     /**

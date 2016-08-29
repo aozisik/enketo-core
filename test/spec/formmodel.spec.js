@@ -10,11 +10,10 @@ var getModel = function( filename ) {
 
 // I don't remember why this functionality exists
 describe( 'Primary instance node values', function() {
-    var metaInstanceID = '<meta><instanceID/></meta>';
-    var model = new Model( '<model><instance><data><nodeA> 2  </nodeA>' + metaInstanceID + '</data></instance></model>' );
+    var model = new Model( '<model><instance><data><nodeA> 2  </nodeA><meta><instanceID/></meta></data></instance></model>' );
     model.init();
     it( 'are trimmed during initialization', function() {
-        expect( model.getStr() ).toEqual( '<data><nodeA>2</nodeA>' + metaInstanceID + '</data>' );
+        expect( model.getStr() ).toContain( '<nodeA>2</nodeA>' );
     } );
 } );
 
@@ -71,7 +70,7 @@ describe( 'Data node getter', function() {
             [ null, null, {
                     noEmpty: true
                 },
-                9 //when tested outside Form class, instanceID is not populated
+                10 //instanceID is populated by model
             ],
             [ '/thedata/nodeA', null, null, 1 ],
             [ '/thedata/nodeA', 1, null, 0 ],
@@ -901,4 +900,48 @@ describe( 'getting XML fragments', function() {
             '<nested_repeats xmlns:jr="http://openrosa.org/javarosa" xmlns:orx="http://openrosa.org/xforms/" id="nested_repeats"><kids><kids_details></kids_details></kids></nested_repeats>' );
     } );
 
+} );
+
+
+describe( 'instanceID and deprecatedID are populated upon model initilization', function() {
+    it( 'for a new record', function() {
+        var model = new Model( {
+            modelStr: '<model><instance><a><meta><instanceID/></meta></a></instance></model>'
+        } );
+        model.init();
+
+        expect( model.getStr() ).toMatch( /<a><meta><instanceID>[^\s]{41}<\/instanceID><\/meta><\/a>/ );
+    } );
+
+    it( 'for an existing unsubmitted record', function() {
+        var model = new Model( {
+            modelStr: '<model><instance><a><meta><instanceID/></meta></a></instance></model>',
+            instanceStr: '<a><meta><instanceID>abc</instanceID></meta></a>',
+            submitted: false
+        } );
+        model.init();
+
+        expect( model.getStr() ).toEqual( '<a><meta><instanceID>abc</instanceID></meta></a>' );
+    } );
+
+    it( 'for an existing previously-submitted record(1)', function() {
+        var model = new Model( {
+            modelStr: '<model><instance><a><meta><instanceID/></meta></a></instance></model>',
+            instanceStr: '<a><meta><instanceID>abc</instanceID></meta></a>'
+        } );
+        model.init();
+
+        expect( model.getStr() ).toMatch( /<a><meta><instanceID>[^\s]{41}<\/instanceID><deprecatedID>abc<\/deprecatedID><\/meta><\/a>/ );
+    } );
+
+    it( 'for an existing previously-submitted record (2)', function() {
+        var model = new Model( {
+            modelStr: '<model><instance><a><meta><instanceID/></meta></a></instance></model>',
+            instanceStr: '<a><meta><instanceID>abc</instanceID></meta></a>',
+            submitted: true
+        } );
+        model.init();
+
+        expect( model.getStr() ).toMatch( /<a><meta><instanceID>[^\s]{41}<\/instanceID><deprecatedID>abc<\/deprecatedID><\/meta><\/a>/ );
+    } );
 } );

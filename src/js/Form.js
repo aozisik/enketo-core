@@ -237,8 +237,13 @@ define( function( require, exports, module ) {
             }
 
             try {
-                // before widgets.init (as instanceID used in offlineFilepicker widget)
                 this.preloads.init( this );
+
+                // before widgets.init (as instanceID used in offlineFilepicker widget)
+                // store the current instanceID as data on the form element so it can be easily accessed by e.g. widgets
+                $form.data( {
+                    instanceID: model.getInstanceID()
+                } );
 
                 // before calcUpdate!
                 this.grosslyViolateStandardComplianceByIgnoringCertainCalcs();
@@ -1470,6 +1475,7 @@ define( function( require, exports, module ) {
                     }
                 } );
                 // In addition the presence of certain meta data in the instance may automatically trigger a preload function
+                // TODO: remove this completely now that instanceID and deprecatedID are set in the form model?
                 model.getMetaNode( '*' ).get().each( function() {
                     var localName;
                     item = null;
@@ -1482,11 +1488,6 @@ define( function( require, exports, module ) {
                     if ( $form.find( '#or-preload-items input[name$="' + name + '"][data-preload]' ).length === 0 ) {
                         localName = name.indexOf( ':' ) ? name.substring( name.indexOf( ':' ) + 1 ) : name;
                         switch ( localName ) {
-                            case 'instanceID':
-                                item = 'instance';
-                                xmlType = 'string';
-                                param = '';
-                                break;
                             case 'timeStart':
                                 item = 'timestamp';
                                 xmlType = 'datetime';
@@ -1530,6 +1531,7 @@ define( function( require, exports, module ) {
                         value = model.evaluate( 'now()', 'string' );
                         o.dataNode.setVal( value, null, 'datetime' );
                     } );
+                    //TODO: why populate this upon load?
                     return model.evaluate( 'now()', 'string' );
                 }
                 return 'error - unknown timestamp parameter';
@@ -1621,15 +1623,6 @@ define( function( require, exports, module ) {
                     return 'no uid yet in enketo';
                 }
                 return o.curVal;
-            },
-            //Not according to spec yet, this will be added to spec but name may change
-            'instance': function( o ) {
-                var id = ( o.curVal.length > 0 ) ? o.curVal : model.evaluate( 'concat("uuid:", uuid())', 'string' );
-                //store the current instanceID as data on the form element so it can be easily accessed by e.g. widgets
-                $form.data( {
-                    instanceID: id
-                } );
-                return id;
             }
         };
 

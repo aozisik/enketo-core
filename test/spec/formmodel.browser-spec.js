@@ -98,8 +98,9 @@ describe( 'merging an instance into the model', function() {
             expect( model.node( '/thedata/meta/deprecatedID' ).getVal()[ 0 ] ).toEqual( '7c990ed9-8aab-42ba-84f5-bf23277154ad' );
         } );
 
-        it( 'empties the instanceID', function() {
-            expect( model.node( '/thedata/meta/instanceID' ).getVal()[ 0 ] ).toEqual( '' );
+        it( 'generates a new instanceID', function() {
+            expect( model.node( '/thedata/meta/instanceID' ).getVal()[ 0 ] ).not.toEqual( '7c990ed9-8aab-42ba-84f5-bf23277154ad' );
+            expect( model.node( '/thedata/meta/instanceID' ).getVal()[ 0 ].length ).toEqual( 41 );
         } );
     } );
 
@@ -132,9 +133,9 @@ describe( 'merging an instance into the model', function() {
     describe( 'when the model contains templates', function() {
         [
             // with improper template=""
-            [ '<a><r><b>5</b></r><r><b>6</b></r><meta/></a>', '<model><instance><a><r template=""><b>0</b></r><meta><instanceID/></meta></a></instance></model>', '<model><instance><a><r><b>5</b></r><r><b>6</b></r><meta><instanceID/><deprecatedID/></meta></a></instance></model>' ],
+            [ '<a><r><b>5</b></r><r><b>6</b></r><meta/></a>', '<model><instance><a><r template=""><b>0</b></r><meta><instanceID/></meta></a></instance></model>', '<a><r><b>5</b></r><r><b>6</b></r>' ],
             // with proper jr:template="" and namespace definition
-            [ '<a><r><b>5</b></r><r><b>6</b></r><meta/></a>', '<model xmlns:jr="http://openrosa.org/javarosa"><instance><a><r jr:template=""><b>0</b></r><meta><instanceID/></meta></a></instance></model>', '<model xmlns:jr="http://openrosa.org/javarosa"><instance><a><r><b>5</b></r><r><b>6</b></r><meta><instanceID/><deprecatedID/></meta></a></instance></model>' ],
+            [ '<a><r><b>5</b></r><r><b>6</b></r><meta/></a>', '<model xmlns:jr="http://openrosa.org/javarosa"><instance><a><r jr:template=""><b>0</b></r><meta><instanceID/></meta></a></instance></model>', '<instance><a><r><b>5</b></r><r><b>6</b></r>' ],
         ].forEach( function( test ) {
             var result, expected,
                 model = new Model( {
@@ -149,7 +150,7 @@ describe( 'merging an instance into the model', function() {
 
             it( 'the initialization will merge the repeat values correctly and remove the templates', function() {
                 expect( model.xml.querySelectorAll( 'a > r' ).length ).toEqual( 2 );
-                expect( result ).toEqual( expected );
+                expect( result ).toContain( expected );
             } );
         } );
     } );
