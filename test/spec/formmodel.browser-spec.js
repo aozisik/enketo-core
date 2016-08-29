@@ -179,3 +179,48 @@ describe( 'merging an instance into the model', function() {
         } );
     } );
 } );
+
+
+// Runs fine headlessly locally, but not on Travis for some reason.
+describe( 'instanceID and deprecatedID are populated upon model initilization', function() {
+    it( 'for a new record', function() {
+        var model = new Model( {
+            modelStr: '<model><instance><a><meta><instanceID/></meta></a></instance></model>'
+        } );
+        model.init();
+
+        expect( model.getStr() ).toMatch( /<a><meta><instanceID>[^\s]{41}<\/instanceID><\/meta><\/a>/ );
+    } );
+
+    it( 'for an existing unsubmitted record', function() {
+        var model = new Model( {
+            modelStr: '<model><instance><a><meta><instanceID/></meta></a></instance></model>',
+            instanceStr: '<a><meta><instanceID>abc</instanceID></meta></a>',
+            submitted: false
+        } );
+        model.init();
+
+        expect( model.getStr() ).toEqual( '<a><meta><instanceID>abc</instanceID></meta></a>' );
+    } );
+
+    it( 'for an existing previously-submitted record(1)', function() {
+        var model = new Model( {
+            modelStr: '<model><instance><a><meta><instanceID/></meta></a></instance></model>',
+            instanceStr: '<a><meta><instanceID>abc</instanceID></meta></a>'
+        } );
+        model.init();
+
+        expect( model.getStr() ).toMatch( /<a><meta><instanceID>[^\s]{41}<\/instanceID><deprecatedID>abc<\/deprecatedID><\/meta><\/a>/ );
+    } );
+
+    it( 'for an existing previously-submitted record (2)', function() {
+        var model = new Model( {
+            modelStr: '<model><instance><a><meta><instanceID/></meta></a></instance></model>',
+            instanceStr: '<a><meta><instanceID>abc</instanceID></meta></a>',
+            submitted: true
+        } );
+        model.init();
+
+        expect( model.getStr() ).toMatch( /<a><meta><instanceID>[^\s]{41}<\/instanceID><deprecatedID>abc<\/deprecatedID><\/meta><\/a>/ );
+    } );
+} );
