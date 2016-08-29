@@ -41,6 +41,7 @@ define( function( require, exports, module ) {
         options = options || {};
         options.full = ( typeof options.full !== 'undefined' ) ? options.full : true;
 
+        this.$events = $( '<div/>' );
         this.convertedExpressions = {};
         this.templates = {};
         this.loadErrors = [];
@@ -579,7 +580,7 @@ define( function( require, exports, module ) {
                     allClonedNodeNames.push( $( this ).prop( 'nodeName' ) );
                 } );
 
-                this.$.trigger( 'dataupdate', {
+                this.$events.trigger( 'dataupdate', {
                     nodes: allClonedNodeNames,
                     repeatPath: selector,
                     repeatIndex: that.node( selector, index ).determineIndex( $templateClone ),
@@ -1252,7 +1253,7 @@ define( function( require, exports, module ) {
             updated.file = ( xmlDataType === 'binary' ) ? newVal.toString() : false;
             updated.empty = !newVal.toString();
 
-            this.model.$.trigger( 'dataupdate', updated );
+            this.model.$events.trigger( 'dataupdate', updated );
             //add type="file" attribute for file references
             if ( xmlDataType === 'binary' ) {
                 if ( newVal.length > 0 ) {
@@ -1362,7 +1363,7 @@ define( function( require, exports, module ) {
             $dataNode.remove();
             this.nodes = null;
 
-            this.model.$.trigger( 'dataupdate', {
+            this.model.$events.trigger( 'dataupdate', {
                 updatedNodes: allRemovedNodeNames,
                 repeatPath: repeatPath,
                 repeatIndex: repeatIndex,

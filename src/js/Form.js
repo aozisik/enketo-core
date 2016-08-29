@@ -224,7 +224,7 @@ define( function( require, exports, module ) {
             this.$ = $form;
             this.$nonRepeats = {};
             // Before initializing form view, passthrough dataupdate event externally
-            model.$.on( 'dataupdate', function( event, updated ) {
+            model.$events.on( 'dataupdate', function( event, updated ) {
                 $form.trigger( 'dataupdate.enketo', updated );
             } );
         }
@@ -1969,7 +1969,7 @@ define( function( require, exports, module ) {
                 }
             } );
 
-            model.$.on( 'dataupdate', function( event, updated ) {
+            model.$events.on( 'dataupdate', function( event, updated ) {
                 that.calcUpdate( updated ); //EACH CALCUPDATE THAT CHANGES A VALUE TRIGGERS ANOTHER CALCUPDATE => INEFFICIENT
                 that.branchUpdate( updated );
                 that.outputUpdate( updated );
