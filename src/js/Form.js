@@ -68,7 +68,7 @@ define( function( require, exports, module ) {
 
             // Before initializing form view, passthrough dataupdate event externally
             model.$events.on( 'dataupdate', function( event, updated ) {
-                $form.trigger( 'dataupdate.enketo', updated );
+                $( formSelector ).trigger( 'dataupdate.enketo', updated );
             } );
 
             loadErrors = loadErrors.concat( model.init() );
