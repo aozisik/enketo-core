@@ -65,6 +65,12 @@ define( function( require, exports, module ) {
             $formClone = $( formSelector ).clone().appendTo( '<original></original>' );
 
             model = new FormModel( data );
+
+            // Before initializing form view, passthrough dataupdate event externally
+            model.$events.on( 'dataupdate', function( event, updated ) {
+                $form.trigger( 'dataupdate.enketo', updated );
+            } );
+
             loadErrors = loadErrors.concat( model.init() );
 
             form = new FormView( formSelector );
@@ -223,10 +229,6 @@ define( function( require, exports, module ) {
             //used for testing
             this.$ = $form;
             this.$nonRepeats = {};
-            // Before initializing form view, passthrough dataupdate event externally
-            model.$events.on( 'dataupdate', function( event, updated ) {
-                $form.trigger( 'dataupdate.enketo', updated );
-            } );
         }
 
         FormView.prototype.init = function() {
